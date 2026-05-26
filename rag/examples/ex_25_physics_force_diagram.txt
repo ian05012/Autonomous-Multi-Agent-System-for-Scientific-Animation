@@ -1,0 +1,1 @@
+A box appears with a downward gravity force arrow labeled 'mg'

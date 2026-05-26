@@ -1,0 +1,23 @@
+# Manim rendering container
+# Extends the official Manim Community image with FFMPEG and audio libs
+FROM manimcommunity/manim:latest
+
+USER root
+
+# Install additional system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python audio libraries for duration measurement
+RUN pip install --no-cache-dir \
+    librosa==0.11.1 \
+    soundfile==0.13.1
+
+# Create workspace directory for scene rendering
+RUN mkdir -p /workspace && chmod 777 /workspace
+
+WORKDIR /workspace
+
+USER manimuser

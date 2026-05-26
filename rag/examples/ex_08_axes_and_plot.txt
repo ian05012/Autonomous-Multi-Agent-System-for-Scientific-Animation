@@ -1,0 +1,1 @@
+Coordinate axes appear followed by a parabola y=x²-1 being drawn

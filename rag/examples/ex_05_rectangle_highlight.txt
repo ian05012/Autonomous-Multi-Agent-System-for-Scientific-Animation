@@ -1,0 +1,1 @@
+A green rectangle is drawn border-first then filled with semi-transparent color

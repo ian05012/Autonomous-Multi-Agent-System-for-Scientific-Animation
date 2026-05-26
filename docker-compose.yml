@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./output:/app/output
+      - ./rag/chroma_db:/app/rag/chroma_db
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow spawning Manim containers
+    env_file:
+      - .env
+    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+
+  # Optional: headless pipeline (no Streamlit)
+  # pipeline:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.app
+  #   volumes:
+  #     - ./output:/app/output
+  #     - ./rag/chroma_db:/app/rag/chroma_db
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   env_file:
+  #     - .env
+  #   command: python main.py --input article.txt

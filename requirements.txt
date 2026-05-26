@@ -1,0 +1,51 @@
+# Core AI frameworks
+langchain==0.3.25
+langchain-openai==0.3.16
+langchain-community==0.3.23
+langgraph==0.4.5
+
+# LLM APIs
+openai==1.82.0
+
+# Vector store (Manim RAG)
+chromadb==0.6.3
+
+# Text-to-speech
+elevenlabs==1.54.0
+
+# Document ingestion
+pdfplumber==0.11.6
+beautifulsoup4==4.13.4
+requests==2.32.3
+
+# Audio processing
+librosa==0.11.1
+soundfile==0.13.1
+
+# Video / rendering
+ffmpeg-python==0.2.0
+docker==7.1.0
+
+# Manim (for type hints and local testing; rendering runs in Docker)
+manim==0.19.0
+
+# Web interface
+streamlit==1.45.1
+
+# Utilities
+python-dotenv==1.1.0
+pydantic==2.11.4
+tenacity==9.1.2
+
+# Social media APIs
+google-api-python-client==2.169.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1
+
+# Testing
+pytest==8.3.5
+pytest-asyncio==0.24.0
+
+# Dev utilities
+rich==14.0.0
+typer==0.15.3

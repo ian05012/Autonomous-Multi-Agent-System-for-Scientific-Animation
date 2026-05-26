@@ -1,0 +1,1 @@
+Text fades in, pauses, then fades out

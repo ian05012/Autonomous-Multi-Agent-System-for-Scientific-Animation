@@ -1,0 +1,1 @@
+Einstein's E=mc² equation appears written in LaTeX style
