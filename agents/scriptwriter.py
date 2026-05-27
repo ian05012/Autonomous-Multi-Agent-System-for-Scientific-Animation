@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from typing import Any
 
 from langchain_openai import ChatOpenAI
@@ -105,6 +106,8 @@ def scriptwriter_node(state: PipelineState) -> dict[str, Any]:
         raise RuntimeError(error_msg) from exc
 
     # 2. Call LLM to generate storyboard
+    from tools.progress import update as _prog
+    _prog(5, "Scriptwriter", "Generating storyboard from article...")
     llm = ChatOpenAI(model=LLM_MODEL, temperature=0.3)
 
     system_msg = SystemMessage(
@@ -114,22 +117,35 @@ def scriptwriter_node(state: PipelineState) -> dict[str, Any]:
         content=HUMAN_PROMPT.format(title=doc["title"], body=doc["body"][:8000])
     )
 
-    try:
-        response = llm.invoke([system_msg, human_msg])
-        raw_json = response.content.strip()
+    # Retry up to 3 times on 429 rate-limit errors
+    last_exc: Exception | None = None
+    for attempt in range(3):
+        try:
+            response = llm.invoke([system_msg, human_msg])
+            raw_json = response.content.strip()
 
-        # Strip markdown code blocks if present
-        if raw_json.startswith("```"):
-            lines = raw_json.split("\n")
-            raw_json = "\n".join(lines[1:-1]) if lines[-1] == "```" else "\n".join(lines[1:])
+            # Strip markdown code blocks if present
+            if raw_json.startswith("```"):
+                lines = raw_json.split("\n")
+                raw_json = "\n".join(lines[1:-1]) if lines[-1] == "```" else "\n".join(lines[1:])
 
-        scenes_data: list[dict] = json.loads(raw_json)
-    except json.JSONDecodeError as exc:
-        error_msg = f"Scriptwriter: Failed to parse LLM JSON output — {exc}"
-        raise RuntimeError(error_msg) from exc
-    except Exception as exc:
-        error_msg = f"Scriptwriter: LLM call failed — {exc}"
-        raise RuntimeError(error_msg) from exc
+            scenes_data: list[dict] = json.loads(raw_json)
+            break  # success
+        except json.JSONDecodeError as exc:
+            error_msg = f"Scriptwriter: Failed to parse LLM JSON output — {exc}"
+            raise RuntimeError(error_msg) from exc
+        except Exception as exc:
+            last_exc = exc
+            # Retry on rate-limit (429)
+            if "429" in str(exc) and attempt < 2:
+                wait = 35 * (attempt + 1)
+                print(f"  [Scriptwriter] Rate-limited (429), retrying in {wait}s...")
+                time.sleep(wait)
+                continue
+            error_msg = f"Scriptwriter: LLM call failed — {exc}"
+            raise RuntimeError(error_msg) from exc
+    else:
+        raise RuntimeError(f"Scriptwriter: LLM call failed after retries — {last_exc}")
 
     # 3. Validate and normalize scenes
     storyboard: list[SceneSpec] = []
@@ -143,7 +159,8 @@ def scriptwriter_node(state: PipelineState) -> dict[str, Any]:
         visual_words = len(visual_desc.split())
 
         if narration_words < 10:
-            narration = narration + " " + "This scene explores the concept visually."
+            padding = "This scene visually explores the concept through animated elements step by step."
+            narration = narration + " " + padding
         if visual_words < 5:
             visual_desc = visual_desc + " Show the key concept with animated elements."
 
@@ -161,6 +178,8 @@ def scriptwriter_node(state: PipelineState) -> dict[str, Any]:
             f"Scriptwriter: Generated only {len(storyboard)} scenes "
             f"(minimum {MIN_SCENES} required)."
         )
+
+    _prog(15, "Scriptwriter", f"Storyboard ready — {len(storyboard)} scenes")
 
     # 4. Persist state and return update
     updated_state = {**state, "storyboard": storyboard}

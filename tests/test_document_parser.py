@@ -63,8 +63,8 @@ class TestParseText:
         assert result["word_count"] == 100
 
     def test_untitled_fallback(self):
-        # Text with no clear short first line
-        long_first_line = "x" * 300 + "\n" + "actual content " * 20
+        # Text with no clear short first line and enough words to pass validation
+        long_first_line = "x" * 300 + "\n" + "actual content " * 30
         result = parse_text(long_first_line)
         # Should not crash; title is either extracted or "Untitled"
         assert isinstance(result["title"], str)

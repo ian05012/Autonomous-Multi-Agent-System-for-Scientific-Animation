@@ -68,11 +68,16 @@ def voiceover_node(state: PipelineState) -> dict[str, Any]:
         audio_files = [a for a in state.get("audio_files", [])
                        if a["scene_id"] != target_scene_id]
 
-    for scene in scenes_to_process:
+    from tools.progress import update as _prog
+    total = len(scenes_to_process)
+
+    for i, scene in enumerate(scenes_to_process):
         scene_id = scene["scene_id"]
         narration = scene["narration"]
         output_path = os.path.join(AUDIO_OUTPUT_DIR, f"scene_{scene_id}.mp3")
 
+        pct = 15 + int((i / total) * 20)
+        _prog(pct, "Voiceover", f"Synthesizing scene {scene_id}/{total}")
         print(f"  [Voiceover] Synthesizing scene {scene_id}...")
         try:
             audio_meta = _synthesize_with_retry(narration, output_path, scene_id)

@@ -32,7 +32,7 @@ from state import VideoMeta
 
 MANIM_IMAGE = "manim-science-animation"   # local tag built from Dockerfile.manim
 MANIM_IMAGE_FALLBACK = "manimcommunity/manim:latest"
-RENDER_TIMEOUT = 120                       # seconds
+RENDER_TIMEOUT = 180                       # seconds
 VIDEO_OUTPUT_DIR = "output/video"
 RENDER_RESOLUTION = os.getenv("RENDER_RESOLUTION", "720p")
 
@@ -139,7 +139,8 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
             class_name,
             "--media_dir", "/workspace/media",
             "--format", "mp4",
-            *resolution_flags,
+            "--quality", "l",   # low quality = 480p 15fps, fastest render
+            "--disable_caching",
         ]
 
         client = _get_docker_client()
@@ -151,29 +152,42 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
                 command=cmd,
                 volumes={tmpdir: {"bind": "/workspace", "mode": "rw"}},
                 working_dir="/workspace",
-                remove=True,
-                detach=False,
+                remove=False,   # keep container so we can kill it on timeout
+                detach=True,
                 stdout=True,
                 stderr=True,
-                timeout=RENDER_TIMEOUT,
             )
-            logs = container if isinstance(container, bytes) else b""
+        except Exception as exc:
+            raise ManimRenderError(
+                f"Docker error starting container for scene {scene_id}: {exc}",
+                ManimErrorType.UNKNOWN,
+                str(exc),
+            )
 
-        except docker.errors.ContainerError as exc:
-            stderr = exc.stderr.decode("utf-8", errors="replace") if exc.stderr else str(exc)
-            error_type = classify_error(stderr)
+        try:
+            exit_status = container.wait(timeout=RENDER_TIMEOUT)
+            logs = container.logs(stdout=True, stderr=True)
+            stderr_text = logs.decode("utf-8", errors="replace") if logs else ""
+            exit_code = exit_status.get("StatusCode", -1)
+        except Exception:
+            # Timeout or other wait error — kill and raise
+            try:
+                container.kill()
+            except Exception:
+                pass
+            raise ManimRenderTimeout()
+        finally:
+            try:
+                container.remove(force=True)
+            except Exception:
+                pass
+
+        if exit_code != 0:
+            error_type = classify_error(stderr_text)
             raise ManimRenderError(
                 f"Manim render failed (scene {scene_id}): {error_type.value}",
                 error_type,
-                stderr,
-            )
-        except Exception as exc:
-            if "timeout" in str(exc).lower() or "timed out" in str(exc).lower():
-                raise ManimRenderTimeout()
-            raise ManimRenderError(
-                f"Docker error for scene {scene_id}: {exc}",
-                ManimErrorType.UNKNOWN,
-                str(exc),
+                stderr_text,
             )
 
         # Find the rendered MP4 in workspace

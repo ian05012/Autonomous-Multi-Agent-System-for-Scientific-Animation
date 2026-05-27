@@ -1,0 +1,177 @@
+[
+  {
+    "filename": "ex_01_circle_grow.py",
+    "passed": true,
+    "error": "",
+    "render_time": 5.0,
+    "validated_at": "2026-05-27T06:50:27.486795+00:00"
+  },
+  {
+    "filename": "ex_02_text_write.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.8,
+    "validated_at": "2026-05-27T06:50:32.257824+00:00"
+  },
+  {
+    "filename": "ex_03_latex_equation.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.8,
+    "validated_at": "2026-05-27T06:50:37.032994+00:00"
+  },
+  {
+    "filename": "ex_04_arrow_pointing.py",
+    "passed": true,
+    "error": "",
+    "render_time": 3.6,
+    "validated_at": "2026-05-27T06:50:40.611743+00:00"
+  },
+  {
+    "filename": "ex_05_rectangle_highlight.py",
+    "passed": true,
+    "error": "",
+    "render_time": 3.9,
+    "validated_at": "2026-05-27T06:50:44.516163+00:00"
+  },
+  {
+    "filename": "ex_06_transform_shape.py",
+    "passed": true,
+    "error": "",
+    "render_time": 3.9,
+    "validated_at": "2026-05-27T06:50:48.404117+00:00"
+  },
+  {
+    "filename": "ex_07_number_line.py",
+    "passed": true,
+    "error": "",
+    "render_time": 8.2,
+    "validated_at": "2026-05-27T06:50:56.626099+00:00"
+  },
+  {
+    "filename": "ex_08_axes_and_plot.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.0,
+    "validated_at": "2026-05-27T06:51:00.669596+00:00"
+  },
+  {
+    "filename": "ex_09_fadein_fadeout.py",
+    "passed": true,
+    "error": "",
+    "render_time": 16.6,
+    "validated_at": "2026-05-27T06:51:17.333583+00:00"
+  },
+  {
+    "filename": "ex_10_rotating_object.py",
+    "passed": true,
+    "error": "",
+    "render_time": 5.5,
+    "validated_at": "2026-05-27T06:51:22.813733+00:00"
+  },
+  {
+    "filename": "ex_11_multi_step_labels.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.8,
+    "validated_at": "2026-05-27T06:51:27.610646+00:00"
+  },
+  {
+    "filename": "ex_12_highlight_box.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.9,
+    "validated_at": "2026-05-27T06:51:32.496637+00:00"
+  },
+  {
+    "filename": "ex_13_number_plane.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.5,
+    "validated_at": "2026-05-27T06:51:37.049066+00:00"
+  },
+  {
+    "filename": "ex_14_vector_field.py",
+    "passed": true,
+    "error": "",
+    "render_time": 10.9,
+    "validated_at": "2026-05-27T06:51:48.014558+00:00"
+  },
+  {
+    "filename": "ex_15_bar_chart.py",
+    "passed": true,
+    "error": "",
+    "render_time": 9.0,
+    "validated_at": "2026-05-27T06:51:57.049884+00:00"
+  },
+  {
+    "filename": "ex_16_moving_camera.py",
+    "passed": true,
+    "error": "",
+    "render_time": 3.5,
+    "validated_at": "2026-05-27T06:52:00.572988+00:00"
+  },
+  {
+    "filename": "ex_17_wave_function.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.3,
+    "validated_at": "2026-05-27T06:52:04.897050+00:00"
+  },
+  {
+    "filename": "ex_18_dna_double_helix.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.1,
+    "validated_at": "2026-05-27T06:52:08.983829+00:00"
+  },
+  {
+    "filename": "ex_19_dot_moving_along_path.py",
+    "passed": true,
+    "error": "",
+    "render_time": 3.8,
+    "validated_at": "2026-05-27T06:52:12.839955+00:00"
+  },
+  {
+    "filename": "ex_20_scale_animation.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.3,
+    "validated_at": "2026-05-27T06:52:17.184750+00:00"
+  },
+  {
+    "filename": "ex_21_matrix_display.py",
+    "passed": true,
+    "error": "",
+    "render_time": 6.7,
+    "validated_at": "2026-05-27T06:52:23.926506+00:00"
+  },
+  {
+    "filename": "ex_22_color_gradient.py",
+    "passed": true,
+    "error": "",
+    "render_time": 3.6,
+    "validated_at": "2026-05-27T06:52:27.535956+00:00"
+  },
+  {
+    "filename": "ex_23_vgroup_arrangement.py",
+    "passed": true,
+    "error": "",
+    "render_time": 3.6,
+    "validated_at": "2026-05-27T06:52:31.144069+00:00"
+  },
+  {
+    "filename": "ex_24_text_transform.py",
+    "passed": true,
+    "error": "",
+    "render_time": 4.6,
+    "validated_at": "2026-05-27T06:52:35.726377+00:00"
+  },
+  {
+    "filename": "ex_25_physics_force_diagram.py",
+    "passed": true,
+    "error": "",
+    "render_time": 3.9,
+    "validated_at": "2026-05-27T06:52:39.607017+00:00"
+  }
+]

@@ -27,6 +27,13 @@ import os
 import sys
 from pathlib import Path
 
+# Ensure the project root is in sys.path so `rag.*` imports resolve correctly
+# regardless of whether the script is run as `python rag/build_index.py` or
+# as a module `python -m rag.build_index`.
+_PROJECT_ROOT = str(Path(__file__).parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -41,14 +48,96 @@ CHUNK_OVERLAP = 64     # tokens overlap
 
 # Manim CE documentation pages to index (key reference pages)
 MANIM_DOC_URLS = [
+    # Overview, examples, tutorials
     "https://docs.manim.community/en/stable/reference.html",
-    "https://docs.manim.community/en/stable/reference/manim.animation.html",
-    "https://docs.manim.community/en/stable/reference/manim.mobject.html",
-    "https://docs.manim.community/en/stable/reference/manim.scene.html",
-    "https://docs.manim.community/en/stable/reference/manim.utils.html",
-    "https://docs.manim.community/en/stable/guides/index.html",
-    "https://docs.manim.community/en/stable/tutorials/index.html",
     "https://docs.manim.community/en/stable/examples.html",
+    "https://docs.manim.community/en/stable/tutorials/index.html",
+    "https://docs.manim.community/en/stable/tutorials/quickstart.html",
+    "https://docs.manim.community/en/stable/tutorials/building_blocks.html",
+    "https://docs.manim.community/en/stable/tutorials/output_and_config.html",
+    "https://docs.manim.community/en/stable/guides/index.html",
+    "https://docs.manim.community/en/stable/guides/using_text.html",
+    "https://docs.manim.community/en/stable/guides/add_voiceovers.html",
+    "https://docs.manim.community/en/stable/guides/deep_dive.html",
+    # Animation reference pages
+    "https://docs.manim.community/en/stable/reference/manim.animation.animation.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.creation.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.fading.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.growing.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.indication.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.movement.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.numbers.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.rotation.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.specialized.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.transform.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.transform_matching_parts.html",
+    "https://docs.manim.community/en/stable/reference/manim.animation.updater.html",
+    # Geometry mobjects
+    "https://docs.manim.community/en/stable/reference/manim.mobject.geometry.arc.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.geometry.boolean_ops.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.geometry.line.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.geometry.polygram.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.geometry.shape_matchers.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.geometry.tips.html",
+    # Graphing mobjects
+    "https://docs.manim.community/en/stable/reference/manim.mobject.graphing.coordinate_systems.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.graphing.functions.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.graphing.number_line.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.graphing.probability.html",
+    # Text and math
+    "https://docs.manim.community/en/stable/reference/manim.mobject.text.text_mobject.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.text.tex_mobject.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.text.numbers.html",
+    # Other mobjects
+    "https://docs.manim.community/en/stable/reference/manim.mobject.graph.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.logo.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.matrix.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.mobject.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.svg.brace.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.svg.svg_mobject.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.table.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.three_d.three_dimensions.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.types.image_mobject.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.types.point_cloud_mobject.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.types.vectorized_mobject.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.value_tracker.html",
+    # Scene
+    "https://docs.manim.community/en/stable/reference/manim.scene.scene.html",
+    "https://docs.manim.community/en/stable/reference/manim.scene.moving_camera_scene.html",
+    "https://docs.manim.community/en/stable/reference/manim.scene.three_d_scene.html",
+    "https://docs.manim.community/en/stable/reference/manim.scene.vector_space_scene.html",
+    "https://docs.manim.community/en/stable/reference/manim.scene.zoomed_scene.html",
+    # Camera
+    "https://docs.manim.community/en/stable/reference/manim.camera.camera.html",
+    "https://docs.manim.community/en/stable/reference/manim.camera.moving_camera.html",
+    "https://docs.manim.community/en/stable/reference/manim.camera.three_d_camera.html",
+    # Animation (additional)
+    "https://docs.manim.community/en/stable/reference/manim.animation.composition.html",
+    # Utils
+    "https://docs.manim.community/en/stable/reference/manim.utils.color.html",
+    "https://docs.manim.community/en/stable/reference/manim.utils.rate_functions.html",
+    "https://docs.manim.community/en/stable/reference/manim.utils.tex.html",
+    "https://docs.manim.community/en/stable/reference/manim.utils.space_ops.html",
+    "https://docs.manim.community/en/stable/reference/manim.utils.bezier.html",
+    "https://docs.manim.community/en/stable/reference/manim.utils.paths.html",
+    "https://docs.manim.community/en/stable/reference/manim.utils.color.core.html",
+    "https://docs.manim.community/en/stable/reference/manim.utils.color.manim_colors.html",
+    # Config
+    "https://docs.manim.community/en/stable/reference/manim._config.html",
+    # Additional mobjects
+    "https://docs.manim.community/en/stable/reference/manim.mobject.frame.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.svg.svg_mobject.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.changing.html",
+    "https://docs.manim.community/en/stable/reference/manim.mobject.three_d.polyhedra.html",
+    # Additional guides
+    "https://docs.manim.community/en/stable/guides/configuration.html",
+    "https://docs.manim.community/en/stable/faq/index.html",
+    "https://docs.manim.community/en/stable/faq/general.html",
+    "https://docs.manim.community/en/stable/faq/help.html",
+    "https://docs.manim.community/en/stable/installation.html",
+    # Changelog (rich in class/method references)
+    "https://docs.manim.community/en/stable/changelog/0.18.0-changelog.html",
+    "https://docs.manim.community/en/stable/changelog/0.17.0-changelog.html",
 ]
 
 EXAMPLES_DIR = Path(__file__).parent / "examples"
@@ -220,7 +309,7 @@ def build_index(rebuild: bool = False, validate_first: bool = False) -> None:
             vectorstore.add_documents(batch)
         print(f"  Embedded {min(i + batch_size, len(all_documents))}/{len(all_documents)} chunks...")
 
-    print(f"\n✓ Index built successfully with {len(all_documents)} chunks.")
+    print(f"\nOK Index built successfully with {len(all_documents)} chunks.")
     print(f"  Persisted to: {persist_dir}")
 
 

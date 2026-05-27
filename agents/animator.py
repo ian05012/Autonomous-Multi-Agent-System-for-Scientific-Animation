@@ -14,6 +14,7 @@ from __future__ import annotations
 import ast
 import os
 import re
+import time
 from typing import Any
 
 from langchain_openai import ChatOpenAI
@@ -31,7 +32,7 @@ from rag.retriever import retrieve_manim_context, format_rag_context
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
+LLM_MODEL = os.getenv("ANIMATOR_MODEL") or os.getenv("LLM_MODEL", "gpt-4o")
 MAX_RETRIES = 5
 TIMING_TOLERANCE = 0.5  # seconds
 
@@ -46,14 +47,23 @@ CRITICAL RULES:
    NEVER use manimlib or deprecated APIs.
 2. The scene class MUST be named exactly: AnimatedScene
 3. The class must extend Scene with a construct(self) method.
-4. TIMING CONSTRAINT: The total run_time across ALL self.play() calls MUST equal 
+4. TIMING CONSTRAINT: The total run_time across ALL self.play() calls MUST equal
    exactly {target_duration:.1f} seconds.
    - Every self.play() call MUST include an explicit run_time=X argument.
    - The sum of all run_time values MUST equal {target_duration:.1f}.
 5. Import only from manim and standard library (math, numpy, etc.).
-6. Keep the code simple and reliable. Prefer common Manim patterns.
-7. Add self.wait() calls as needed, but their time is INCLUDED in total duration.
-8. Return ONLY the Python code. No markdown, no explanation.
+6. PERFORMANCE — render must complete within 120 seconds:
+   - Use at most 8 mobjects total. Prefer simple shapes and transforms.
+   - Use ONLY Text() for all text and equations — NEVER MathTex, Tex, or LaTeX.
+     (LaTeX compilation causes timeouts.)
+   - Allowed mobjects: Text, Circle, Rectangle, Square, Arrow, Line, Dot, VGroup,
+     NumberPlane, Axes (no plots), SurroundingRectangle, Brace.
+   - NO 3D, NO particle systems, NO SVGMobject, NO ImageMobject, NO external files.
+   - You may use FadeIn, FadeOut, Write, Create, Transform, ReplacementTransform,
+     GrowArrow, DrawBorderThenFill, Indicate, Flash for animations.
+7. NEVER use self.wait() with values > 3.
+8. Add self.wait() calls as needed, but their time is INCLUDED in total duration.
+9. Return ONLY the Python code. No markdown, no explanation.
 """
 
 GENERATION_HUMAN = """Create a Manim animation for this scene:
@@ -77,6 +87,8 @@ RULES:
 - Keep the class name as AnimatedScene.
 - Total run_time must still equal {target_duration:.1f} seconds.
 - Use only manim CE ≥ 0.18 public API.
+- NEVER use MathTex, Tex, or any LaTeX — use Text() for everything.
+- Use at most 5 mobjects. Simple is better.
 """
 
 CORRECTION_HUMAN = """ORIGINAL CODE:
@@ -103,9 +115,10 @@ ERROR_GUIDANCE = {
         "their expected types. Ensure numeric values are float/int as required."
     ),
     ManimErrorType.TIMEOUT: (
-        "The animation is too complex and exceeded the time limit. Simplify it: "
-        "reduce the number of animated objects, use simpler animations, "
-        "or reduce the complexity of mathematical objects."
+        "The animation exceeded the render time limit. You MUST radically simplify: "
+        "use at most 3 mobjects total (Text + Arrow + Circle is enough). "
+        "NO loops, NO complex math, NO VGroup with many children. "
+        "Each self.play() should animate ONE simple object. Keep it minimal."
     ),
     ManimErrorType.UNKNOWN: (
         "Fix the error shown in the traceback. Ensure valid Manim CE ≥ 0.18 syntax."
@@ -247,7 +260,18 @@ def _render_with_correction(
     Raises:
         RuntimeError: If all MAX_RETRIES attempts fail.
     """
-    code = _generate_code(scene, target_duration, llm)
+    # Retry code generation up to 3 times on 429 rate limit
+    for gen_attempt in range(3):
+        try:
+            code = _generate_code(scene, target_duration, llm)
+            break
+        except Exception as exc:
+            if "429" in str(exc) and gen_attempt < 2:
+                wait = 35 * (gen_attempt + 1)
+                print(f"    [Animator] Rate-limited (429) on code gen, retrying in {wait}s...")
+                time.sleep(wait)
+            else:
+                raise
     _validate_timing(code, target_duration)
 
     last_error = None
@@ -319,7 +343,10 @@ def animator_node(state: PipelineState) -> dict[str, Any]:
     updated_storyboard = list(storyboard)
     error_messages: list[str] = []
 
-    for scene in scenes_to_process:
+    from tools.progress import update as _prog
+    total_scenes = len(scenes_to_process)
+
+    for scene_idx, scene in enumerate(scenes_to_process):
         scene_id = scene["scene_id"]
         audio_meta = audio_by_scene.get(scene_id)
 
@@ -330,17 +357,29 @@ def animator_node(state: PipelineState) -> dict[str, Any]:
             continue
 
         target_duration = audio_meta["duration_seconds"]
+        pct = 35 + int((scene_idx / total_scenes) * 50)
+        _prog(pct, "Animator", f"Rendering scene {scene_id}/{total_scenes}")
         print(f"  [Animator] Processing scene {scene_id} (target: {target_duration}s)...")
 
         try:
             video_meta, _ = _render_with_correction(scene, target_duration, llm)
             video_clips.append(video_meta)
             _mark_scene_done(updated_storyboard, scene_id)
-        except RuntimeError as exc:
+        except Exception as exc:
+            # Catch ALL exceptions (including RateLimitError, not just RuntimeError)
             error_msg = f"Animator: Scene {scene_id} permanently failed — {exc}"
             error_messages.append(error_msg)
             _mark_scene_error(updated_storyboard, scene_id)
             print(f"  [Animator] ERROR: {error_msg}")
+
+        # Save progress after every scene so partial results survive crashes
+        partial_updates: dict[str, Any] = {
+            "video_clips": sorted(video_clips, key=lambda v: v["scene_id"]),
+            "storyboard": updated_storyboard,
+        }
+        if error_messages:
+            partial_updates["error_log"] = error_messages
+        save_state({**state, **partial_updates})  # type: ignore[arg-type]
 
     # Sort video clips by scene_id
     video_clips.sort(key=lambda v: v["scene_id"])

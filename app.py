@@ -17,9 +17,18 @@ State is loaded from output/state.json and persisted after each action.
 from __future__ import annotations
 
 import os
+import sys
 import threading
 from pathlib import Path
 from typing import Optional
+
+# Ensure project root is on sys.path so all agents/tools imports work
+_ROOT = str(Path(__file__).parent.resolve())
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from dotenv import load_dotenv
+load_dotenv(Path(_ROOT) / ".env")
 
 import streamlit as st
 
@@ -132,6 +141,24 @@ def _render_sidebar() -> None:
             st.spinner("Generating...")
 
         st.markdown("---")
+        st.markdown("### 🌐 Language Settings")
+        st.selectbox(
+            "Speech language (TTS)",
+            options=["en-US", "zh-TW", "zh-CN", "ja-JP", "ko-KR", "fr-FR", "de-DE", "es-ES"],
+            key="tts_language",
+            help="Language spoken in the voiceover",
+        )
+        st.toggle("Enable subtitles", value=True, key="subtitle_enabled")
+        st.selectbox(
+            "Subtitle language",
+            options=["en", "zh-TW", "zh-CN", "ja", "ko", "fr", "de", "es", "pt", "ar"],
+            index=1,
+            key="subtitle_language",
+            help="Subtitle display language (can differ from speech)",
+            disabled=not st.session_state.get("subtitle_enabled", True),
+        )
+
+        st.markdown("---")
         if st.button("🗑️ Clear & Start Over", use_container_width=True):
             if Path(STATE_PATH).exists():
                 Path(STATE_PATH).unlink()
@@ -205,6 +232,62 @@ def _start_revision(revision_text: str) -> None:
     st.rerun()
 
 
+def _compose_video() -> None:
+    """Trigger video composition with current subtitle settings."""
+    state = st.session_state.pipeline_state
+    if state is None:
+        return
+
+    subtitle_enabled = st.session_state.get("subtitle_enabled", True)
+    subtitle_lang = st.session_state.get("subtitle_language", "zh-TW")
+
+    st.session_state.pipeline_running = True
+    st.session_state.status_message = "Composing video..."
+
+    def run():
+        from tools.ffmpeg_composer import compose_video
+        from tools.subtitle_generator import generate_srt
+        from tools.progress import update as _prog, finish as _finish, reset as _reset
+        _reset()
+        try:
+            subtitle_path = None
+            if subtitle_enabled and state.get("storyboard") and state.get("audio_files"):
+                import os as _os
+                _os.environ["SUBTITLE_LANGUAGE"] = subtitle_lang
+                _prog(20, "Subtitles", f"Translating to {subtitle_lang}...")
+                srt_path = "output/subtitles.srt"
+                try:
+                    subtitle_path = generate_srt(
+                        storyboard=state["storyboard"],
+                        audio_files=state["audio_files"],
+                        output_path=srt_path,
+                    )
+                except Exception as exc:
+                    print(f"  [Subtitles] WARNING: {exc}")
+
+            _prog(70, "Composer", "Composing final video...")
+            final_path = compose_video(
+                audio_files=state.get("audio_files", []),
+                video_clips=state.get("video_clips", []),
+                subtitle_path=subtitle_path,
+            )
+            _finish("Video ready!")
+            new_state = {**state, "final_video_path": final_path}
+            save_state(new_state)  # type: ignore
+            st.session_state.pipeline_state = new_state
+            st.session_state.status_message = "✓ Video composed successfully!"
+        except Exception as exc:
+            from tools.progress import error as _perr
+            _perr(str(exc))
+            st.session_state.status_message = f"Composition error: {exc}"
+        finally:
+            st.session_state.pipeline_running = False
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    st.rerun()
+
+
 def _approve_and_publish() -> None:
     """Approve the video and trigger social media publishing."""
     state = st.session_state.pipeline_state
@@ -254,16 +337,36 @@ def _render_main() -> None:
         else:
             st.info(st.session_state.status_message)
 
+    # ── Progress bar (shown while pipeline runs) ──────────────────────────────
+    if st.session_state.pipeline_running:
+        try:
+            from tools.progress import get as _get_prog
+            prog = _get_prog()
+            pct = prog["pct"]
+            stage = prog["stage"]
+            detail = prog["detail"]
+
+            stage_icons = {
+                "Starting": "🔄", "Scriptwriter": "📝", "Voiceover": "🎙️",
+                "Animator": "🎨", "Composer": "🎬", "Error": "❌",
+            }
+            icon = stage_icons.get(stage, "⏳")
+            st.markdown(f"**{icon} {stage}** — {detail}" if detail else f"**{icon} {stage}**")
+            st.progress(pct / 100)
+        except Exception:
+            st.progress(0.5)
+
     if state is None:
-        st.markdown("### 👈 Enter your science article in the sidebar to get started")
-        st.markdown("""
-        **What this tool does:**
-        1. 📝 Converts your science article into an educational storyboard
-        2. 🎙️ Generates voiceover narration for each scene
-        3. 🎨 Creates Manim animations synchronized with the audio
-        4. 🎬 Composes everything into a final educational video
-        5. 📱 Optionally publishes to YouTube and Instagram
-        """)
+        if not st.session_state.pipeline_running:
+            st.markdown("### 👈 Enter your science article in the sidebar to get started")
+            st.markdown("""
+            **What this tool does:**
+            1. 📝 Converts your science article into an educational storyboard
+            2. 🎙️ Generates voiceover narration for each scene
+            3. 🎨 Creates Manim animations synchronized with the audio
+            4. 🎬 Composes everything into a final educational video
+            5. 📱 Optionally publishes to YouTube and Instagram
+            """)
         return
 
     # ── Error banner ──────────────────────────────────────────────────────────
@@ -339,11 +442,27 @@ def _render_main() -> None:
 
     # ── HITL Controls ─────────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### ✏️ Revision Controls")
+    st.markdown("### ✏️ Controls")
 
     final_video = state.get("final_video_path")
+    has_clips = bool(state.get("video_clips"))
+
+    # Compose button — show whenever video clips exist
+    if has_clips:
+        sub_enabled = st.session_state.get("subtitle_enabled", True)
+        sub_lang = st.session_state.get("subtitle_language", "zh-TW")
+        sub_label = f"subtitles: {sub_lang}" if sub_enabled else "no subtitles"
+        if st.button(
+            f"🎬 Compose Video  ({sub_label})",
+            type="primary" if not final_video else "secondary",
+            disabled=st.session_state.pipeline_running,
+            use_container_width=False,
+        ):
+            _compose_video()
+
     if not final_video:
-        st.info("Generate the video first before making revisions.")
+        if not has_clips:
+            st.info("Run the pipeline first — video clips need to be rendered before composing.")
         return
 
     col_revision, col_approve = st.columns([3, 1])
@@ -364,10 +483,10 @@ def _render_main() -> None:
             _start_revision(revision_text.strip())
 
     with col_approve:
-        st.markdown("#### ✅ Approve")
+        st.markdown("#### Approve")
         st.markdown("Happy with the video?")
         if st.button(
-            "🚀 Approve & Publish",
+            "Approve & Publish",
             type="primary",
             disabled=st.session_state.pipeline_running,
             use_container_width=True,

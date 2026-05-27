@@ -25,7 +25,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
@@ -35,7 +35,7 @@ load_dotenv()
 
 EXAMPLES_DIR = Path(__file__).parent / "examples"
 RESULTS_FILE = EXAMPLES_DIR / "validation_results.json"
-MANIM_IMAGE = os.getenv("MANIM_IMAGE", "manimcommunity/manim:latest")
+MANIM_IMAGE = os.getenv("MANIM_IMAGE", "manim-science-animation")
 RENDER_TIMEOUT = 60  # seconds per example (shorter than production: simpler scenes)
 RENDER_RESOLUTION = "854,480"  # 480p for validation speed
 
@@ -55,7 +55,7 @@ class ValidationResult:
         self.passed = passed
         self.error = error
         self.render_time = render_time
-        self.validated_at = validated_at or datetime.utcnow().isoformat()
+        self.validated_at = validated_at or datetime.now(tz=timezone.utc).isoformat()
 
     def to_dict(self) -> dict:
         return {
@@ -153,6 +153,8 @@ def validate_example(py_file: Path) -> ValidationResult:
                 cmd,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=RENDER_TIMEOUT,
             )
             elapsed = round(time.time() - start, 1)
@@ -216,17 +218,17 @@ def print_report(results: dict[str, ValidationResult]) -> None:
     print(f"  Manim Examples Validation Report")
     print(f"{'='*60}")
     print(f"  Total:   {len(results)}")
-    print(f"  Passed:  {len(passed)}  ✓")
-    print(f"  Failed:  {len(failed)}  ✗")
+    print(f"  Passed:  {len(passed)}")
+    print(f"  Failed:  {len(failed)}")
     print(f"{'='*60}")
 
     if passed:
-        print(f"\n✓ PASSED ({len(passed)}):")
+        print(f"\n[OK] PASSED ({len(passed)}):")
         for r in sorted(passed, key=lambda x: x.filename):
             print(f"  [{r.render_time:.1f}s] {r.filename}")
 
     if failed:
-        print(f"\n✗ FAILED ({len(failed)}):")
+        print(f"\n[FAIL] FAILED ({len(failed)}):")
         for r in sorted(failed, key=lambda x: x.filename):
             print(f"  {r.filename}")
             print(f"    Error: {r.error[:200]}")
@@ -266,10 +268,10 @@ def run_validation(revalidate: bool = False) -> dict[str, ValidationResult]:
         results[py_file.name] = result
 
         if result.passed:
-            print(f"✓  ({result.render_time:.1f}s)")
+            print(f"[OK]  ({result.render_time:.1f}s)")
         else:
             short_error = result.error[:80].replace("\n", " ")
-            print(f"✗  {short_error}")
+            print(f"[FAIL]  {short_error}")
 
         # Save after each file (in case of interruption)
         save_results(results)

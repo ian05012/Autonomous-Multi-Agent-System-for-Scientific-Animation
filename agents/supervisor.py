@@ -69,12 +69,33 @@ def _safe_node(node_fn, node_name: str):
 # ─── FFMPEG composition node ──────────────────────────────────────────────────
 
 def composition_node(state: PipelineState) -> dict[str, Any]:
-    """LangGraph node: FFMPEG video composition."""
+    """LangGraph node: FFMPEG video composition with optional subtitles."""
+    import os as _os
+    from tools.subtitle_generator import generate_srt, SUBTITLE_ENABLED
+    from tools.progress import update as _prog
+
     try:
+        _prog(87, "Composer", "Preparing subtitles...")
+        subtitle_path = None
+        if SUBTITLE_ENABLED and state.get("storyboard") and state.get("audio_files"):
+            srt_path = "output/subtitles.srt"
+            try:
+                subtitle_path = generate_srt(
+                    storyboard=state["storyboard"],
+                    audio_files=state["audio_files"],
+                    output_path=srt_path,
+                )
+            except Exception as exc:
+                print(f"  [Subtitles] WARNING: Subtitle generation failed ({exc}), skipping.")
+
+        _prog(93, "Composer", "Composing final video...")
         final_path = compose_video(
             audio_files=state.get("audio_files", []),
             video_clips=state.get("video_clips", []),
+            subtitle_path=subtitle_path,
         )
+        from tools.progress import finish as _finish
+        _finish("Video ready!")
         updated = {**state, "final_video_path": final_path}
         save_state(updated)  # type: ignore[arg-type]
         return {"final_video_path": final_path}
@@ -289,6 +310,10 @@ def run_pipeline(
         Final PipelineState after the graph completes.
     """
     from state import make_initial_state
+    from tools.progress import reset as _reset, update as _prog
+
+    _reset()
+    _prog(2, "Starting", "Initialising pipeline...")
 
     initial_state = make_initial_state(input_text, source_type, input_path)  # type: ignore[arg-type]
     pipeline = compile_pipeline()
