@@ -21,6 +21,11 @@ env/
 output/
 rag/chroma_db/
 
+# Agent / workflow tooling
+.agent/
+.claude/
+openspec/
+
 # IDE
 .vscode/
 .idea/
