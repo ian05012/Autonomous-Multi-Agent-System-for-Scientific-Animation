@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="AXION — Transform science articles into educational animations with AI">
+    <title>AXION — Science Animation Studio</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/studio.css" rel="stylesheet">
+</head>
+
+<body>
+<main>
+
+<!-- ─── NAVBAR ─────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg" id="navbar">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="#section_1">
+            <svg class="navbar-brand-image" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="24,3 43,13.5 43,34.5 24,45 5,34.5 5,13.5" stroke="#00CFFF" stroke-width="2" fill="none"/>
+                <polygon points="24,3 43,13.5 43,34.5 24,45 5,34.5 5,13.5" stroke="#00CFFF" stroke-width="0.5" fill="rgba(0,207,255,0.05)"/>
+                <path d="M19 16 L19 32 L35 24 Z" fill="#00CFFF"/>
+                <circle cx="24" cy="3" r="2.5" fill="#7C3AED"/>
+                <circle cx="43" cy="13.5" r="2.5" fill="#7C3AED"/>
+                <circle cx="43" cy="34.5" r="2.5" fill="#7C3AED"/>
+                <circle cx="24" cy="45" r="2.5" fill="#7C3AED"/>
+                <circle cx="5" cy="34.5" r="2.5" fill="#7C3AED"/>
+                <circle cx="5" cy="13.5" r="2.5" fill="#7C3AED"/>
+            </svg>
+            <span class="navbar-brand-text">
+                AXION
+                <small>Science Studio</small>
+            </span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-lg-auto">
+                <li class="nav-item"><a class="nav-link click-scroll" href="#section_1">Home</a></li>
+                <li class="nav-item"><a class="nav-link click-scroll" href="#section_2">How It Works</a></li>
+                <li class="nav-item"><a class="nav-link click-scroll" href="#section_3">Studio</a></li>
+                <li class="nav-item"><a class="nav-link click-scroll" href="#section_4">Result</a></li>
+                <li class="nav-item"><a class="nav-link click-scroll" href="#section_5">Pricing</a></li>
+            </ul>
+            <div class="d-none d-lg-block ms-lg-3">
+                <a class="btn custom-btn custom-border-btn" href="#section_3">Launch Studio</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+
+<!-- ─── HERO ──────────────────────────────────────────────────────────── -->
+<section class="hero-section d-flex justify-content-center align-items-center" id="section_1">
+    <div class="hero-grid-overlay"></div>
+    <div class="hero-glow hero-glow-cyan"></div>
+    <div class="hero-glow hero-glow-purple"></div>
+
+    <svg class="hero-wave-top" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+        <path fill="#080C18" fill-opacity="1" d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,0L0,0Z"/>
+    </svg>
+
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 col-12 mb-5 mb-lg-0">
+                <p class="hero-eyebrow">AI-Powered Educational Video</p>
+                <h1 class="cd-headline rotate-1 text-white mb-3">
+                    Science.&nbsp;
+                    <span class="cd-words-wrapper">
+                        <b class="is-visible">Animated.</b>
+                        <b>Intelligent.</b>
+                        <b>Visual.</b>
+                    </span>
+                </h1>
+                <p class="hero-subtitle">
+                    Paste any science article — AXION transforms it into a fully narrated,
+                    animated educational video in minutes.
+                </p>
+                <div class="custom-btn-group mt-4">
+                    <a href="#section_3" class="btn custom-btn smoothscroll me-3">
+                        <i class="bi-play-fill me-1"></i> Launch Studio
+                    </a>
+                    <a href="#section_2" class="link smoothscroll">
+                        How it works <i class="bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="hero-stats mt-5">
+                    <div class="hero-stat">
+                        <span class="stat-value">GPT-5</span>
+                        <span class="stat-label">Scriptwriter</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="stat-value">Manim</span>
+                        <span class="stat-label">Renderer</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="stat-value">Google</span>
+                        <span class="stat-label">TTS</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 col-12">
+                <div class="ratio ratio-16x9 hero-video-wrap">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/MGNgbNGOzh8"
+                        title="YouTube video player" frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <svg class="hero-wave-bottom" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+        <path fill="#0A0F1E" fill-opacity="1" d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L0,320Z"/>
+    </svg>
+</section>
+
+
+<!-- ─── HOW IT WORKS ──────────────────────────────────────────────────── -->
+<section class="pipeline-section section-padding" id="section_2">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <p class="section-eyebrow">Under the Hood</p>
+                <h2 class="text-white">How AXION Works</h2>
+                <p class="section-subtitle">A multi-agent AI pipeline from article to animation</p>
+            </div>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="pipeline-card">
+                    <div class="pipeline-step">01</div>
+                    <div class="pipeline-icon"><i class="bi-file-text"></i></div>
+                    <h5>Scriptwriter</h5>
+                    <p>GPT-5 reads your article and generates a structured storyboard with narration and visual descriptions for each scene.</p>
+                    <div class="pipeline-tag">GPT-5</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="pipeline-card">
+                    <div class="pipeline-step">02</div>
+                    <div class="pipeline-icon"><i class="bi-mic"></i></div>
+                    <h5>Voiceover</h5>
+                    <p>Google Cloud TTS synthesizes natural-sounding speech for each scene in your chosen language.</p>
+                    <div class="pipeline-tag">Google TTS</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="pipeline-card">
+                    <div class="pipeline-step">03</div>
+                    <div class="pipeline-icon"><i class="bi-display"></i></div>
+                    <h5>Animator</h5>
+                    <p>GPT-5.1-Codex generates Manim Python code, rendered in a Docker sandbox with self-correction on errors.</p>
+                    <div class="pipeline-tag">Manim CE</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="pipeline-card">
+                    <div class="pipeline-step">04</div>
+                    <div class="pipeline-icon"><i class="bi-film"></i></div>
+                    <h5>Composer</h5>
+                    <p>FFMPEG merges audio and animation per scene, burns multilingual subtitles, and outputs the final MP4.</p>
+                    <div class="pipeline-tag">FFMPEG</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ─── STUDIO ─────────────────────────────────────────────────────────── -->
+<section class="studio-section section-padding" id="section_3">
+    <div class="section-wave-top">
+        <svg viewBox="0 0 1265 80" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#0A0F1E" d="M0,40 C320,80 640,0 960,40 C1120,60 1200,20 1265,40 L1265,0 L0,0 Z"/>
+        </svg>
+    </div>
+
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <p class="section-eyebrow">Create</p>
+                <h2>Animation Studio</h2>
+                <p class="section-subtitle">Configure and generate your science animation</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Input Panel -->
+            <div class="col-lg-7 col-12">
+                <div class="studio-card">
+                    <h5 class="studio-card-title"><i class="bi-pencil-square me-2"></i>Article Input</h5>
+
+                    <!-- Input type tabs -->
+                    <ul class="nav studio-tabs mb-3" id="inputTabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-tab="text" href="#">
+                                <i class="bi-text-paragraph me-1"></i>Text
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-tab="pdf" href="#">
+                                <i class="bi-file-pdf me-1"></i>PDF
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-tab="url" href="#">
+                                <i class="bi-link-45deg me-1"></i>URL
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div id="input-text-panel">
+                        <textarea id="input-text" class="studio-textarea"
+                            placeholder="Paste your science article here (minimum 50 words)...
+&#10;Example: The human brain contains approximately 86 billion neurons, each connected to thousands of others..."
+                            rows="10"></textarea>
+                    </div>
+
+                    <div id="input-pdf-panel" style="display:none">
+                        <div class="upload-zone" id="upload-zone">
+                            <i class="bi-cloud-upload upload-icon"></i>
+                            <p>Drop PDF here or <label for="pdf-input" class="upload-browse">browse</label></p>
+                            <p class="upload-hint">Supports PDF up to 50MB</p>
+                            <input type="file" id="pdf-input" accept=".pdf" style="display:none">
+                        </div>
+                        <div id="upload-status" class="upload-status" style="display:none"></div>
+                    </div>
+
+                    <div id="input-url-panel" style="display:none">
+                        <input type="url" id="input-url" class="studio-input"
+                            placeholder="https://en.wikipedia.org/wiki/...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Config Panel -->
+            <div class="col-lg-5 col-12">
+                <div class="studio-card h-100">
+                    <h5 class="studio-card-title"><i class="bi-sliders me-2"></i>Settings</h5>
+
+                    <!-- Model Tier -->
+                    <div class="config-group">
+                        <label class="config-label">Model Tier</label>
+                        <div class="tier-toggle">
+                            <button class="tier-btn active" data-tier="paid" id="btn-paid">
+                                <i class="bi-stars me-1"></i>
+                                <span class="tier-name">Paid</span>
+                                <span class="tier-sub">OpenAI gpt-5</span>
+                            </button>
+                            <button class="tier-btn" data-tier="free" id="btn-free">
+                                <i class="bi-gift me-1"></i>
+                                <span class="tier-name">Free</span>
+                                <span class="tier-sub">OpenRouter</span>
+                            </button>
+                        </div>
+                        <p class="config-hint" id="tier-hint">
+                            Scriptwriter: <code>gpt-5</code> &nbsp;|&nbsp; Animator: <code>gpt-5.1-codex</code>
+                        </p>
+                    </div>
+
+                    <!-- TTS Language -->
+                    <div class="config-group">
+                        <label class="config-label">Speech Language (TTS)</label>
+                        <select id="tts-language" class="studio-select">
+                            <option value="en-US">🇺🇸 English (US)</option>
+                            <option value="zh-TW">🇹🇼 Chinese (Taiwan)</option>
+                            <option value="zh-CN">🇨🇳 Chinese (Mainland)</option>
+                            <option value="ja-JP">🇯🇵 Japanese</option>
+                            <option value="ko-KR">🇰🇷 Korean</option>
+                            <option value="fr-FR">🇫🇷 French</option>
+                            <option value="de-DE">🇩🇪 German</option>
+                            <option value="es-ES">🇪🇸 Spanish</option>
+                        </select>
+                    </div>
+
+                    <!-- Subtitles -->
+                    <div class="config-group">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="config-label mb-0">Subtitles</label>
+                            <label class="studio-toggle">
+                                <input type="checkbox" id="subtitle-enabled" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <select id="subtitle-language" class="studio-select">
+                            <option value="zh-TW">🇹🇼 Chinese (Traditional)</option>
+                            <option value="zh-CN">🇨🇳 Chinese (Simplified)</option>
+                            <option value="en">🇺🇸 English</option>
+                            <option value="ja">🇯🇵 Japanese</option>
+                            <option value="ko">🇰🇷 Korean</option>
+                            <option value="fr">🇫🇷 French</option>
+                            <option value="de">🇩🇪 German</option>
+                            <option value="ar">🇸🇦 Arabic</option>
+                        </select>
+                    </div>
+
+                    <div class="mt-auto pt-3 d-flex gap-2">
+                        <button class="btn custom-btn flex-grow-1" id="generate-btn">
+                            <i class="bi-play-fill me-2"></i>Generate Animation
+                        </button>
+                        <button class="btn clear-btn" id="clear-btn" title="Clear state">
+                            <i class="bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ─── PROGRESS + RESULT ─────────────────────────────────────────────── -->
+<section class="result-section section-padding" id="section_4">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <p class="section-eyebrow">Output</p>
+                <h2>Result</h2>
+            </div>
+        </div>
+
+        <!-- Progress Panel (shown while running) -->
+        <div id="progress-panel" class="studio-card mb-4" style="display:none">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="studio-card-title mb-0"><i class="bi-cpu me-2"></i>Pipeline Running</h5>
+                <span id="progress-stage-badge" class="stage-badge">Starting</span>
+            </div>
+            <div class="progress-bar-track mb-2">
+                <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+            <p class="progress-detail mb-0" id="progress-detail">Initialising...</p>
+        </div>
+
+        <!-- Error Panel -->
+        <div id="error-panel" class="studio-card error-card mb-4" style="display:none">
+            <h5 class="studio-card-title text-danger"><i class="bi-exclamation-triangle me-2"></i>Errors</h5>
+            <div id="error-list"></div>
+        </div>
+
+        <!-- Video Panel -->
+        <div id="video-panel" class="studio-card mb-4" style="display:none">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="studio-card-title mb-0"><i class="bi-film me-2"></i>Generated Video</h5>
+                <a id="video-download" class="btn custom-btn btn-sm" href="/api/video" download="animation.mp4">
+                    <i class="bi-download me-1"></i>Download
+                </a>
+            </div>
+            <div class="ratio ratio-16x9 result-video-wrap">
+                <video id="result-video" controls>
+                    <source src="/api/video" type="video/mp4">
+                </video>
+            </div>
+        </div>
+
+        <!-- Compose + Revision Controls -->
+        <div id="controls-panel" style="display:none">
+            <div class="row g-4">
+                <!-- Compose -->
+                <div class="col-lg-4 col-12">
+                    <div class="studio-card">
+                        <h5 class="studio-card-title"><i class="bi-collection-play me-2"></i>Compose</h5>
+                        <p class="config-hint mb-3">Merge rendered clips into final video with current subtitle settings.</p>
+                        <button class="btn custom-btn w-100" id="compose-btn">
+                            <i class="bi-film me-2"></i>Compose Video
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Revision -->
+                <div class="col-lg-8 col-12">
+                    <div class="studio-card">
+                        <h5 class="studio-card-title"><i class="bi-pencil me-2"></i>Revision</h5>
+                        <textarea id="revision-text" class="studio-textarea mb-3" rows="3"
+                            placeholder='e.g. "Change the circle in scene 2 to red" or "Make narration in scene 3 slower"'></textarea>
+                        <div class="d-flex gap-2">
+                            <button class="btn custom-btn flex-grow-1" id="revision-btn">
+                                <i class="bi-arrow-clockwise me-2"></i>Submit Revision
+                            </button>
+                            <button class="btn publish-btn" id="publish-btn">
+                                <i class="bi-send me-1"></i>Publish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Storyboard -->
+        <div id="storyboard-panel" class="studio-card mt-4" style="display:none">
+            <h5 class="studio-card-title">
+                <i class="bi-card-list me-2"></i>Storyboard
+                <span id="storyboard-count" class="ms-2 scene-count"></span>
+            </h5>
+            <div id="storyboard-list" class="storyboard-grid"></div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ─── PRICING ───────────────────────────────────────────────────────── -->
+<section class="pricing-section section-padding section-bg" id="section_5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <p class="section-eyebrow">Plans</p>
+                <h2>Model Tiers</h2>
+                <p class="section-subtitle">Switch anytime from the Studio panel</p>
+            </div>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-5 col-md-6 col-12">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <i class="bi-gift pricing-icon"></i>
+                        <h4>Free Tier</h4>
+                        <p class="pricing-price">$0 <span>/ video</span></p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="bi-check-circle-fill"></i> OpenRouter free models</li>
+                        <li><i class="bi-check-circle-fill"></i> Scriptwriter: gpt-oss-20b</li>
+                        <li><i class="bi-check-circle-fill"></i> Animator: gpt-oss-120b</li>
+                        <li><i class="bi-check-circle-fill"></i> Google TTS voiceover</li>
+                        <li><i class="bi-x-circle-fill text-muted"></i> Rate limits may apply</li>
+                        <li><i class="bi-x-circle-fill text-muted"></i> Lower animation quality</li>
+                    </ul>
+                    <a href="#section_3" class="btn custom-border-btn w-100 smoothscroll">Use Free Tier</a>
+                </div>
+            </div>
+
+            <div class="col-lg-5 col-md-6 col-12">
+                <div class="pricing-card pricing-card-featured">
+                    <div class="pricing-badge">Recommended</div>
+                    <div class="pricing-header">
+                        <i class="bi-stars pricing-icon"></i>
+                        <h4>Paid Tier</h4>
+                        <p class="pricing-price">~$0.21 <span>/ video</span></p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="bi-check-circle-fill"></i> Official OpenAI API</li>
+                        <li><i class="bi-check-circle-fill"></i> Scriptwriter: gpt-5</li>
+                        <li><i class="bi-check-circle-fill"></i> Animator: gpt-5.1-codex</li>
+                        <li><i class="bi-check-circle-fill"></i> Google TTS voiceover</li>
+                        <li><i class="bi-check-circle-fill"></i> No rate limits</li>
+                        <li><i class="bi-check-circle-fill"></i> Highest animation quality</li>
+                    </ul>
+                    <a href="#section_3" class="btn custom-btn w-100 smoothscroll">Use Paid Tier</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────────────────── -->
+<footer class="site-footer">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-4 col-12 mb-4 mb-lg-0">
+                <a class="navbar-brand d-flex align-items-center" href="#section_1">
+                    <svg class="navbar-brand-image" viewBox="0 0 48 48" fill="none">
+                        <polygon points="24,3 43,13.5 43,34.5 24,45 5,34.5 5,13.5" stroke="#00CFFF" stroke-width="2" fill="none"/>
+                        <path d="M19 16 L19 32 L35 24 Z" fill="#00CFFF"/>
+                        <circle cx="24" cy="3" r="2.5" fill="#7C3AED"/>
+                        <circle cx="43" cy="13.5" r="2.5" fill="#7C3AED"/>
+                        <circle cx="24" cy="45" r="2.5" fill="#7C3AED"/>
+                    </svg>
+                    <span class="navbar-brand-text">
+                        AXION
+                        <small>Science Studio</small>
+                    </span>
+                </a>
+                <p class="footer-tagline">Transform science into animation with AI.</p>
+            </div>
+
+            <div class="col-lg-4 col-12 text-lg-center mb-4 mb-lg-0">
+                <p class="footer-nav">
+                    <a href="#section_1">Home</a>
+                    <a href="#section_2">How It Works</a>
+                    <a href="#section_3">Studio</a>
+                    <a href="#section_5">Pricing</a>
+                </p>
+                <p class="copyright-text">© 2026 AXION Science Studio</p>
+            </div>
+
+            <div class="col-lg-4 col-12 text-lg-end">
+                <ul class="social-icon">
+                    <li class="social-icon-item">
+                        <a href="#" class="social-icon-link bi-github"></a>
+                    </li>
+                    <li class="social-icon-item">
+                        <a href="#" class="social-icon-link bi-youtube"></a>
+                    </li>
+                    <li class="social-icon-item">
+                        <a href="#" class="social-icon-link bi-twitter"></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 160" class="footer-wave">
+        <path fill="#00CFFF" fill-opacity="0.06" d="M0,96L60,90.7C120,85,240,75,360,80C480,85,600,107,720,106.7C840,107,960,85,1080,80C1200,75,1320,85,1380,90.7L1440,96L1440,160L0,160Z"/>
+    </svg>
+</footer>
+
+
+<!-- ─── SCRIPTS ─────────────────────────────────────────────────────────── -->
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="js/jquery.sticky.js"></script>
+<script src="js/click-scroll.js"></script>
+<script src="js/animated-headline.js"></script>
+<script src="js/modernizr.js"></script>
+<script src="js/studio.js"></script>
+
+</body>
+</html>
