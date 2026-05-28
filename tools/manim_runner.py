@@ -155,6 +155,8 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
         working_dir       = "/workspace"
 
     workspace_dir.mkdir(parents=True, exist_ok=True)
+    # Pre-create media dir from app container so manimuser doesn't need to create it
+    (workspace_dir / "media").mkdir(parents=True, exist_ok=True)
     script_target = workspace_dir / "scene.py"
     script_target.write_text(code, encoding="utf-8")
 
@@ -178,6 +180,7 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
             command=cmd,
             volumes=volume_spec,
             working_dir=working_dir,
+            user="root",    # ensure write access to named volume dirs
             remove=False,
             detach=True,
             stdout=True,
