@@ -1,29 +1,41 @@
 version: "3.9"
 
 services:
+
+  # ── Flask web app ─────────────────────────────────────────────────────────
   app:
     build:
       context: .
       dockerfile: Dockerfile.app
     ports:
-      - "8501:8501"
+      - "5000:5000"
     volumes:
       - ./output:/app/output
       - ./rag/chroma_db:/app/rag/chroma_db
-      - /var/run/docker.sock:/var/run/docker.sock  # Allow spawning Manim containers
+      # Docker socket — lets the app spawn Manim rendering containers on the host
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Google Cloud TTS credentials (bind-mount so the key never enters the image)
+      - type: bind
+        source: "./multi-agent api.json"
+        target: /app/credentials.json
+        read_only: true
     env_file:
       - .env
-    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+    environment:
+      # Override path so it matches the bind-mount target inside the container
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+    restart: unless-stopped
+    depends_on:
+      manim:
+        condition: service_completed_successfully
 
-  # Optional: headless pipeline (no Streamlit)
-  # pipeline:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.app
-  #   volumes:
-  #     - ./output:/app/output
-  #     - ./rag/chroma_db:/app/rag/chroma_db
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #   env_file:
-  #     - .env
-  #   command: python main.py --input article.txt
+  # ── Manim rendering image (build-only, exits immediately after build) ─────
+  # Running `docker compose build` tags the image as manim-science-animation
+  # on the host Docker daemon — the app container spawns it via socket mount.
+  manim:
+    build:
+      context: .
+      dockerfile: Dockerfile.manim
+    image: manim-science-animation
+    command: ["echo", "manim image ready"]
+    restart: "no"
