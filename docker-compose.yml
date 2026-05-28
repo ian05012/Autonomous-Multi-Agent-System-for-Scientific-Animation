@@ -10,8 +10,8 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./output:/app/output
-      - ./rag/chroma_db:/app/rag/chroma_db
+      # Source code — mounted so code changes take effect on container restart (no rebuild)
+      - .:/app
       # Docker socket — lets the app spawn Manim rendering containers on the host
       - /var/run/docker.sock:/var/run/docker.sock
       # Google Cloud TTS credentials (bind-mount so the key never enters the image)
