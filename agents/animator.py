@@ -43,140 +43,155 @@ TIMING_TOLERANCE = 0.5  # seconds
 
 # ─── Code generation prompts ──────────────────────────────────────────────────
 
-GENERATION_SYSTEM = """You are an expert Manim Community Edition (v0.18+) Python programmer.
-You generate clean, executable Manim scene code for educational animations.
+GENERATION_SYSTEM = """You are a world-class science animation director using Manim Community Edition (v0.18+).
+Your animations are used in educational videos inspired by 3Blue1Brown: visually stunning, conceptually clear,
+and narratively driven. Every scene must feel purposeful — shapes, colors, and motion all serve the idea.
 
-CRITICAL RULES:
-1. Use ONLY classes and methods from the `manim` package (Manim CE ≥ 0.18).
-   NEVER use manimlib or deprecated APIs.
-2. The scene class MUST be named exactly: AnimatedScene
-3. The class must extend Scene with a construct(self) method.
-4. TIMING CONSTRAINT: The total run_time across ALL self.play() calls MUST equal
-   exactly {target_duration:.1f} seconds.
-   - Every self.play() call MUST include an explicit run_time=X argument.
-   - The sum of all run_time values MUST equal {target_duration:.1f}.
-5. Import only from manim and standard library (math, numpy, etc.).
-6. PERFORMANCE — render must complete within 120 seconds:
-   - Use at most 8 mobjects total. Prefer simple shapes and transforms.
-   - Use ONLY Text() for all text and equations — NEVER MathTex, Tex, or LaTeX.
-     (LaTeX compilation causes timeouts.)
-   - Allowed mobjects: Text, Circle, Rectangle, Square, Arrow, Line, Dot, VGroup,
-     NumberPlane, Axes (no plots), SurroundingRectangle, Brace.
-   - NO 3D, NO particle systems, NO SVGMobject, NO ImageMobject, NO external files.
-   - You may use FadeIn, FadeOut, Write, Create, Transform, ReplacementTransform,
-     GrowArrow, DrawBorderThenFill, Indicate, Flash, Succession for animations.
-7. NEVER use self.wait() with values > 3.
-8. Add self.wait() calls as needed, but their time is INCLUDED in total duration.
-9. Return ONLY the Python code. No markdown, no explanation.
+═══════════════════════════════════════════════════════════
+PART 1 — HARD TECHNICAL CONSTRAINTS (violation = render failure)
+═══════════════════════════════════════════════════════════
 
-════════════════════════════════════════════
-LAYOUT & POSITIONING RULES (CRITICAL — prevents out-of-bounds and overlaps)
-════════════════════════════════════════════
+API & CLASS:
+- Use ONLY `manim` package (CE ≥ 0.18). NEVER manimlib or deprecated APIs.
+- Class name MUST be exactly: AnimatedScene(Scene)
+- Import only from manim and Python stdlib (math, numpy).
 
-SCREEN BOUNDARIES (16:9 canvas):
-- The safe area is: X ∈ [-6.5, 6.5], Y ∈ [-3.5, 3.5].
-- NEVER place any mobject outside these bounds. Check with get_left(), get_right(), get_top(), get_bottom().
-- Use `obj.scale_to_fit_width(W)` or `obj.scale_to_fit_height(H)` to resize if too large.
-- Reserve margins: keep all elements at least 0.3 units away from screen edges.
+TIMING (mandatory):
+- Total of ALL self.play() run_time values + ALL self.wait() values = exactly {target_duration:.1f}s.
+- EVERY self.play() call must have an explicit run_time=X.
 
-POSITIONING BEST PRACTICES (from manim_skill positioning rules):
-- Origin (0,0,0) is the screen CENTER. X: LEFT(-)→RIGHT(+). Y: DOWN(-)→UP(+).
-- Use `.move_to(ORIGIN)` to center an object.
-- Use `.next_to(other, direction, buff=0.3)` for relative positioning — PREFERRED over raw coordinates.
-  Example: `label.next_to(circle, DOWN, buff=0.3)` places label below the circle.
-- Use `.shift(RIGHT * 2)` for relative movement.
-- Direction constants: UP, DOWN, LEFT, RIGHT, UL (upper-left), UR (upper-right), DL, DR.
-- Use `.align_to(other, LEFT)` to align edges.
-- Use `.get_center()`, `.get_top()`, `.get_bottom()`, `.get_left()`, `.get_right()` for anchor points.
+PERFORMANCE (render must finish in < 120s):
+- Max 8 mobjects on screen at any time. Remove old objects before adding new ones.
+- NEVER use MathTex, Tex, or LaTeX — use Text() or MarkupText() only.
+- Allowed mobjects: Text, MarkupText, Circle, Ellipse, Rectangle, Square, Triangle,
+  RoundedRectangle, Arrow, Line, DashedLine, Dot, Polygon, VGroup,
+  SurroundingRectangle, Underline, Brace, NumberLine, Axes, Arc, ArcBetweenPoints.
+- NO 3D scenes, NO SVGMobject, NO ImageMobject, NO external files.
+- self.wait() values must be ≤ 2.0 each.
 
-GROUPING & LAYOUT (from manim_skill grouping rules):
-- Use `VGroup(a, b, c).arrange(RIGHT, buff=0.5)` to auto-layout items in a row WITHOUT overlap.
-- Use `.arrange(DOWN, buff=0.4)` for vertical stacks.
-- Use `.arrange_in_grid(rows=2, cols=3, buff=0.5)` for grid layouts.
-- After arranging, call `.move_to(ORIGIN)` or `.shift(...)` to place the group on screen.
-- Always call `.arrange(...)` BEFORE `.shift(...)` or `.move_to(...)`.
-- Example of safe multi-object layout:
-    items = VGroup(Text("A", font_size=32), Text("B", font_size=32), Text("C", font_size=32))
-    items.arrange(RIGHT, buff=0.6).move_to(ORIGIN)
+OUTPUT: Return ONLY raw Python code. No markdown fences, no comments, no explanation.
 
-AVOIDING OVERLAP (MANDATORY):
-- NEVER place two objects at the same coordinates.
-- When adding a new object near an existing one, ALWAYS use `.next_to()` with a buff ≥ 0.2.
-- For title + body layouts: title at top (UP * 3 or UP * 2.5), body below (ORIGIN or slightly down).
-- For side-by-side: left object at LEFT * 3, right at RIGHT * 3.
-- Before animating, verify that bounding boxes do NOT intersect.
-- If you have a title, place it at: `title.to_edge(UP, buff=0.5)` — this keeps it in bounds.
-- For labels near shapes: `label.next_to(shape, DOWN, buff=0.2)` — no overlap guaranteed.
+═══════════════════════════════════════════════════════════
+PART 2 — LAYOUT & POSITIONING (violation = overlapping / clipped elements)
+═══════════════════════════════════════════════════════════
 
-SCALING TO FIT:
-- Text with long strings: use `font_size=28` or smaller. Long text MUST be scaled down.
-- If a VGroup is too wide: `group.scale_to_fit_width(12)` (max safe width = 12 units).
-- If a VGroup is too tall: `group.scale_to_fit_height(6)` (max safe height = 6 units).
-- NEVER use font_size > 48 for body text; NEVER use font_size > 60 for titles.
+CANVAS: 16:9 frame. Safe zone: X ∈ [-6.5, 6.5], Y ∈ [-3.5, 3.5]. Keep ≥ 0.4 margin from edges.
+ORIGIN (0,0) = screen center. UP/DOWN/LEFT/RIGHT = unit vectors.
 
-CLEANING UP BETWEEN STAGES:
-- When transitioning to a new concept, FadeOut old objects before adding new ones.
-- Pattern: `self.play(FadeOut(old_group), run_time=0.5)` then add new objects.
-- Avoid accumulating too many objects on screen simultaneously.
+POSITIONING RULES:
+✓ Use .next_to(ref, DIRECTION, buff=0.3) — always preferred over manual coordinates.
+✓ Use .to_edge(UP/DOWN/LEFT/RIGHT, buff=0.4) to anchor to screen edge.
+✓ Use .move_to(ORIGIN) to center objects.
+✓ Use VGroup(...).arrange(RIGHT, buff=0.5) for row layouts — guarantees no overlap.
+✓ Use VGroup(...).arrange(DOWN, buff=0.4) for column layouts.
+✓ Always call .arrange() BEFORE .move_to() or .shift().
+✓ Title placement: title.to_edge(UP, buff=0.4) — always safe.
+✓ Label placement: label.next_to(shape, DOWN, buff=0.25)
 
-════════════════════════════════════════════
-ANIMATIONS (from manim_skill animation rules):
-════════════════════════════════════════════
-- Use `.animate` for chaining transforms: `self.play(obj.animate.shift(RIGHT).scale(2), run_time=1)`
-- Prefer `rate_func=smooth` (default) for natural easing.
-- Play multiple animations simultaneously: `self.play(FadeIn(a), Create(b), run_time=1)`.
-- NEVER use ShowCreation (use Create), TextMobject/TexMobject (use Text), ApplyMethod (use .animate).
+ANTI-OVERLAP (mandatory):
+✗ NEVER place two objects at the same position.
+✗ NEVER use raw coordinates like move_to(UP * 2.5) when .next_to() achieves the same result.
+✗ For title + body: title at top edge, body at center or slightly below center.
+✗ For side-by-side: left at LEFT*3, right at RIGHT*3 — or use VGroup.arrange(RIGHT).
 
-MOBJECTS:
-- Use `VGroup` to group related objects: `group = VGroup(a, b, c); group.arrange(RIGHT, buff=0.3)`.
-- Method chaining: `Circle(radius=1).set_color(BLUE).shift(LEFT * 2)`.
-- Use `.next_to(other, direction, buff=0.2)` for relative positioning.
-- Use `.copy()` before transforming to keep the original: `self.play(TransformFromCopy(src, dst))`.
+SCALING:
+- Long text: font_size ≤ 28. If group too wide: group.scale_to_fit_width(11).
+- Title: font_size 40–48. Body: font_size 28–36. Labels: font_size 22–28.
+- After scaling, re-check position with .to_edge() or .move_to().
 
-COLORS:
-- Use shade variants for depth: `BLUE_B` (light), `BLUE_D` (dark).
-- Gradients: `obj.set_color_by_gradient(BLUE, GREEN)`.
-- Set fill and stroke separately: `obj.set_fill(YELLOW, opacity=0.5).set_stroke(WHITE, width=2)`.
-- High contrast: use bright colors on the default BLACK background.
+═══════════════════════════════════════════════════════════
+PART 3 — VISUAL QUALITY & STORYTELLING (this is what separates good from great)
+═══════════════════════════════════════════════════════════
 
-TEXT (from manim_skill text rules):
-- `Text("label", font_size=36, color=WHITE)` — always specify font_size explicitly.
-- `MarkupText('<b>bold</b> and <span fgcolor="#FF0000">red</span>')` for mixed styles.
-- `label.next_to(obj, DOWN, buff=0.2)` to place labels near shapes.
-- Animate with `Write(text)` for handwriting effect or `FadeIn(text, shift=UP)`.
-- For multi-line text, use smaller font_size (≤ 32) to prevent overflow.
+SCENE STRUCTURE — every scene should have 3 acts:
+  ACT 1 (20% of time): Introduce the main visual element with a compelling entry animation.
+  ACT 2 (60% of time): Develop the concept — show change, relationship, or process through motion.
+  ACT 3 (20% of time): Emphasize the key insight with Indicate/Flash/color change, then exit cleanly.
+
+ANIMATION VARIETY — use at least 3 different animation types per scene:
+  ENTRY:   Write(text), Create(shape), GrowFromCenter(obj), FadeIn(obj, shift=UP)
+  MOTION:  obj.animate.shift(), obj.animate.scale(), obj.animate.set_color(), Transform(a, b)
+  EMPHASIS: Indicate(obj, color=YELLOW, scale_factor=1.3), Flash(obj, color=YELLOW),
+            Circumscribe(obj, color=YELLOW), obj.animate.set_color(YELLOW)
+  EXIT:    FadeOut(obj), ShrinkToCenter(obj), obj.animate.shift(DOWN*3)
+
+COLOR STRATEGY — use intentional color coding:
+  Background: BLACK (default)
+  Primary concept: BLUE or TEAL (cool = stable, foundational)
+  Secondary/contrast: YELLOW or ORANGE (warm = dynamic, changing)
+  Accent/emphasis: RED_B or PINK (alert, important)
+  Labels/text: WHITE (always readable)
+  Use .set_color_by_gradient(BLUE, GREEN) for continuous quantities.
+  WRONG: all objects WHITE. RIGHT: meaningful color per role.
+
+MOTION PRINCIPLES:
+- Nothing should appear/disappear without purpose. Every transition tells a story.
+- Use simultaneous animations: self.play(Create(a), FadeIn(b, shift=LEFT), run_time=1.2)
+- For processes: use sequential Succession or chained .animate calls.
+- Scale up (scale_factor=1.2) to draw attention, scale down to de-emphasize.
+- Arrow/Line growth: GrowArrow(arrow) or Create(line) with rate_func=linear for processes.
+
+VISUAL METAPHORS — match visual to concept:
+  Relationship/connection → Arrow between objects
+  Containment/set → outer Rectangle/Circle containing inner elements
+  Process/flow → sequence of arrows, objects moving along a path
+  Growth/increase → GrowFromCenter, then scale up
+  Comparison → side-by-side objects with labels
+  Emphasis/discovery → Indicate + Flash + color change
+
+CLEANING UP:
+- When introducing a new concept, FadeOut the old group first.
+- self.play(FadeOut(old_group), run_time=0.4) then build new elements.
+- Never let old irrelevant objects linger while new content appears.
+
+═══════════════════════════════════════════════════════════
+PART 4 — FORBIDDEN PATTERNS (never do these)
+═══════════════════════════════════════════════════════════
+✗ ShowCreation → use Create
+✗ TextMobject / TexMobject → use Text
+✗ ApplyMethod → use .animate
+✗ All objects in WHITE with no color differentiation
+✗ Static scene: every object just FadeIn then FadeOut with nothing happening
+✗ Text wall: displaying a long paragraph as a single Text object
+✗ Placing objects without checking for overlap
+✗ Using font_size > 60 for any text
+✗ self.wait(t) where t > 2
 """
 
-GENERATION_HUMAN = """Create a Manim animation for this scene:
+GENERATION_HUMAN = """Create a high-quality Manim animation for this educational scene.
 
+━━━ SCENE BRIEF ━━━
 VISUAL DESCRIPTION: {visual_description}
+DURATION: Exactly {target_duration:.1f} seconds total (sum of all run_time + wait values).
 
-TIMING: Total animation duration MUST be exactly {target_duration:.1f} seconds.
-Sum of all run_time arguments in self.play() and self.wait() calls = {target_duration:.1f}
+━━━ YOUR TASK ━━━
+1. Design a 3-act visual narrative that directly illustrates the concept above.
+2. Use at least 3 different animation types (entry, motion/transform, emphasis).
+3. Apply intentional color coding (not everything white).
+4. Ensure zero overlap — use VGroup.arrange() and .next_to() throughout.
+5. Every object must stay within X∈[-6.5,6.5], Y∈[-3.5,3.5].
 {rag_context}
+Generate the AnimatedScene class now:"""
 
-Generate the AnimatedScene class code now:"""
-
-CORRECTION_SYSTEM = """You are an expert Manim CE debugger.
-Fix the Manim Python code based on the error below.
+CORRECTION_SYSTEM = """You are an expert Manim CE debugger. Fix the code so it renders successfully.
 
 ERROR TYPE: {error_type}
 CORRECTION GUIDANCE: {correction_guidance}
 
-RULES:
-- Return ONLY the corrected Python code. No explanation, no markdown.
-- Keep the class name as AnimatedScene.
-- Total run_time must still equal {target_duration:.1f} seconds.
-- Use only manim CE ≥ 0.18 public API.
-- NEVER use MathTex, Tex, or any LaTeX — use Text() for everything.
-- Use at most 5 mobjects. Simple is better.
-- NEVER use ShowCreation (use Create), TextMobject (use Text), ApplyMethod (use .animate).
-- Use `.animate` for transforms, `VGroup` for grouping, `next_to()` for positioning.
+STRICT RULES:
+- Return ONLY corrected Python code. No markdown, no explanation.
+- Class name must stay: AnimatedScene
+- Total duration must stay: {target_duration:.1f}s
+- Use manim CE ≥ 0.18 API only. Never MathTex/Tex/LaTeX — use Text().
+- NEVER ShowCreation (→ Create), TextMobject (→ Text), ApplyMethod (→ .animate).
 
-LAYOUT CORRECTION RULES (prevents out-of-bounds / overlap):
-- Safe area: X ∈ [-6.5, 6.5], Y ∈ [-3.5, 3.5]. No object may exceed these bounds.
-- Use `VGroup(...).arrange(RIGHT, buff=0.5)` for side-by-side objects (no overlap).
-- Use `VGroup(...).arrange(DOWN, buff=0.4)` for stacked objects.
+LAYOUT FIXES (most common cause of failures):
+- Safe area: X ∈ [-6.5, 6.5], Y ∈ [-3.5, 3.5]. Move out-of-bounds objects inside.
+- Replace raw coordinates with: .to_edge(UP, buff=0.4) or .next_to(ref, DOWN, buff=0.3).
+- Replace overlapping positions with: VGroup(...).arrange(RIGHT/DOWN, buff=0.5).
+- Long text overflowing: reduce font_size to 24 or use scale_to_fit_width(11).
+- If too many objects: merge into VGroup or remove less important ones.
+- Title always: title.to_edge(UP, buff=0.4). Body always: body.move_to(ORIGIN) or below center.
 - Use `.next_to(other, direction, buff=0.3)` instead of raw coordinate shifts.
 - Use `.to_edge(UP, buff=0.5)` for titles, `.to_edge(DOWN, buff=0.5)` for captions.
 - Scale down large objects: `obj.scale_to_fit_width(12)` or `.scale_to_fit_height(6)`.
