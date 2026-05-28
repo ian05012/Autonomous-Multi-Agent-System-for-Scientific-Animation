@@ -204,20 +204,63 @@ PART 4 — FORBIDDEN PATTERNS (never do these)
 ✗ self.wait(t) where t > 2
 """
 
-GENERATION_HUMAN = """Create a high-quality Manim animation for this educational scene.
+DESIGN_SYSTEM = """You are a Manim scene director. Given a visual description and duration,
+produce a precise scene design document. This document will be handed directly to a code
+generator — it must be unambiguous and executable.
 
-━━━ SCENE BRIEF ━━━
+OUTPUT FORMAT (use exactly these section headers):
+
+OBJECTS:
+List every visual element. Format: `- <id>: <ManimClass> | <key params> | color=<COLOR>`
+Example:
+- title: Text | "Newton's Laws" | color=TEAL, font_size=44
+- circle: Circle | radius=1.0 | color=BLUE, fill=BLUE opacity=0.7
+- arrow: Arrow | color=YELLOW
+- label: Text | "Force = ma" | color=WHITE, font_size=30
+
+LAYOUT:
+One line per object. Use ONLY these positioning methods:
+- <id>: to_edge(UP/DOWN/LEFT/RIGHT, buff=0.4)
+- <id>: move_to(ORIGIN) / move_to(LEFT*X) / move_to(RIGHT*X) / move_to(UP*Y)
+- <id>: next_to(<ref_id>, UP/DOWN/LEFT/RIGHT, buff=0.3)
+- <id>: VGroup(<id1>,<id2>,...).arrange(RIGHT/DOWN, buff=0.4).move_to(ORIGIN)
+All objects MUST stay within X∈[-6.5,6.5], Y∈[-3.5,3.5].
+
+SHOT PLAN:
+Number each shot. Format: `Shot N (Xs–Ys): <actions>`
+Actions use: enter <id>[<AnimClass>], keep <id>, exit <id>[FadeOut], transform <id>[<anim>], emphasise <id>[Indicate/Flash]
+The sum of all shot durations MUST equal {target_duration:.1f}s exactly.
+
+RULES:
+- Max 6 objects total on screen at any time.
+- Every object must have an explicit enter and exit.
+- No two objects may occupy the same screen region.
+- Titles always at top edge. Labels always next_to their parent object.
+- Prefer VGroup.arrange() over manual coordinates for 2+ sibling objects.
+- Use intentional color coding: primary concept=BLUE/TEAL, dynamic change=YELLOW/ORANGE, emphasis=RED_B.
+"""
+
+DESIGN_HUMAN = """Design a Manim scene for:
+
 VISUAL DESCRIPTION: {visual_description}
-DURATION: Exactly {target_duration:.1f} seconds total (sum of all run_time + wait values).
+NARRATION HINT: {narration}
+DURATION: {target_duration:.1f} seconds
 
-━━━ YOUR TASK ━━━
-1. Design a 3-act visual narrative that directly illustrates the concept above.
-2. Use at least 3 different animation types (entry, motion/transform, emphasis).
-3. Apply intentional color coding (not everything white).
-4. Ensure zero overlap — use VGroup.arrange() and .next_to() throughout.
-5. Every object must stay within X∈[-6.5,6.5], Y∈[-3.5,3.5].
+Produce the OBJECTS, LAYOUT, and SHOT PLAN now:"""
+
+GENERATION_HUMAN = """Implement this Manim scene exactly as designed. The design is your hard spec — follow it faithfully.
+
+━━━ SCENE DESIGN ━━━
+{scene_design}
+
+━━━ CODE REQUIREMENTS ━━━
+- Class name: AnimatedScene(Scene)
+- Total duration: exactly {target_duration:.1f}s (all run_time + wait values must sum to this)
+- Follow the shot plan order and timings precisely
+- Follow the layout spec — use the exact positioning methods listed
+- Use only Manim CE ≥ 0.18 API. Never MathTex/Tex. Text() for all text.
 {rag_context}
-Generate the AnimatedScene class now:"""
+Generate ONLY the Python code, no explanation:"""
 
 CORRECTION_SYSTEM = """You are an expert Manim CE debugger. Fix the code so it renders successfully.
 
@@ -326,15 +369,36 @@ def _validate_timing(code: str, target_duration: float) -> None:
         )
 
 
-# ─── Code generation ──────────────────────────────────────────────────────────
+# ─── Stage 1: Scene Design ────────────────────────────────────────────────────
+
+def _design_scene(scene: SceneSpec, target_duration: float, llm: ChatOpenAI) -> str:
+    """Stage 1: generate a structured design document (objects, layout, shot plan)."""
+    system_msg = SystemMessage(
+        content=DESIGN_SYSTEM.format(target_duration=target_duration)
+    )
+    human_msg = HumanMessage(
+        content=DESIGN_HUMAN.format(
+            visual_description=scene["visual_description"],
+            narration=scene.get("narration", "")[:200],
+            target_duration=target_duration,
+        )
+    )
+    response = llm.invoke([system_msg, human_msg])
+    design = response.content.strip()
+    print(f"    [Animator] Scene {scene['scene_id']} design:\n{design[:300]}...")
+    return design
+
+
+# ─── Stage 2: Code generation ─────────────────────────────────────────────────
 
 def _generate_code(
     scene: SceneSpec,
     target_duration: float,
     llm: ChatOpenAI,
+    scene_design: str = "",
     extra_context: str = "",
 ) -> str:
-    """Call GPT-4o to generate Manim code for a scene."""
+    """Stage 2: generate Manim code from the scene design document."""
     rag_chunks = retrieve_manim_context(scene["visual_description"], k=3)
     rag_context = format_rag_context(rag_chunks) if rag_chunks else ""
     if extra_context:
@@ -345,7 +409,7 @@ def _generate_code(
     )
     human_msg = HumanMessage(
         content=GENERATION_HUMAN.format(
-            visual_description=scene["visual_description"],
+            scene_design=scene_design or f"VISUAL: {scene['visual_description']}",
             target_duration=target_duration,
             rag_context=rag_context,
         )
@@ -353,7 +417,6 @@ def _generate_code(
     response = llm.invoke([system_msg, human_msg])
     code = response.content.strip()
 
-    # Strip markdown code blocks if present
     if code.startswith("```"):
         lines = code.split("\n")
         code = "\n".join(lines[1:-1]) if lines[-1].startswith("```") else "\n".join(lines[1:])
@@ -416,10 +479,23 @@ def _render_with_correction(
     Raises:
         RuntimeError: If all MAX_RETRIES attempts fail.
     """
-    # Retry code generation up to 3 times on 429 rate limit
+    # ── Stage 1: Scene Design ──────────────────────────────────────────────────
+    scene_design = ""
+    for attempt in range(3):
+        try:
+            scene_design = _design_scene(scene, target_duration, llm)
+            break
+        except Exception as exc:
+            if "429" in str(exc) and attempt < 2:
+                time.sleep(30 * (attempt + 1))
+            else:
+                print(f"    [Animator] Design stage failed ({exc}), proceeding without design.")
+                break
+
+    # ── Stage 2: Code Generation ───────────────────────────────────────────────
     for gen_attempt in range(3):
         try:
-            code = _generate_code(scene, target_duration, llm)
+            code = _generate_code(scene, target_duration, llm, scene_design=scene_design)
             break
         except Exception as exc:
             if "429" in str(exc) and gen_attempt < 2:
