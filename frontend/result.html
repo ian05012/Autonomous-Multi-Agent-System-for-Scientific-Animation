@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AXION — Result</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/studio.css" rel="stylesheet">
+    <link href="css/result.css" rel="stylesheet">
+</head>
+
+<body class="result-page">
+
+<!-- ─── NAVBAR ─────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg navbar-result" id="navbar">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="/">
+            <svg class="navbar-brand-image" viewBox="0 0 48 48" fill="none">
+                <polygon points="24,3 43,13.5 43,34.5 24,45 5,34.5 5,13.5" stroke="#00CFFF" stroke-width="2" fill="none"/>
+                <path d="M19 16 L19 32 L35 24 Z" fill="#00CFFF"/>
+                <circle cx="24" cy="3" r="2.5" fill="#7C3AED"/>
+                <circle cx="43" cy="13.5" r="2.5" fill="#7C3AED"/>
+                <circle cx="24" cy="45" r="2.5" fill="#7C3AED"/>
+            </svg>
+            <span class="navbar-brand-text">
+                AXION
+                <small>Science Studio</small>
+            </span>
+        </a>
+
+        <div class="ms-auto d-flex align-items-center gap-3">
+            <span id="nav-status-badge" class="stage-badge" style="display:none"></span>
+            <a href="/" class="btn custom-border-btn btn-sm">
+                <i class="bi-plus-lg me-1"></i>New Animation
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- ─── MAIN CONTENT ────────────────────────────────────────────────────── -->
+<div class="result-layout">
+
+    <!-- ── LEFT: Video + Controls ─────────────────────────────────────── -->
+    <div class="result-main">
+
+        <!-- Progress (shown while running) -->
+        <div id="progress-panel" class="result-card mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="result-card-title mb-0">
+                    <span class="result-spinner"></span>
+                    Pipeline Running
+                </h5>
+                <span id="progress-stage-badge" class="stage-badge">Starting</span>
+            </div>
+            <div class="progress-bar-track mb-2">
+                <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+            <p class="progress-detail mb-0" id="progress-detail">Initialising pipeline...</p>
+        </div>
+
+        <!-- Video -->
+        <div id="video-panel" class="result-card mb-4" style="display:none">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="result-card-title mb-0"><i class="bi-film me-2"></i>Generated Video</h5>
+                <a class="btn custom-btn btn-sm" href="/api/video" download="animation.mp4">
+                    <i class="bi-download me-1"></i>Download
+                </a>
+            </div>
+            <div class="ratio ratio-16x9 result-video-wrap">
+                <video id="result-video" controls>
+                    <source id="video-source" src="/api/video" type="video/mp4">
+                </video>
+            </div>
+        </div>
+
+        <!-- No video yet placeholder -->
+        <div id="waiting-panel" class="result-card mb-4" style="display:none">
+            <div class="waiting-placeholder">
+                <i class="bi-hourglass-split waiting-icon"></i>
+                <p>Generating your animation...</p>
+                <p class="waiting-hint">This usually takes 3–10 minutes depending on the number of scenes.</p>
+            </div>
+        </div>
+
+        <!-- Errors -->
+        <div id="error-panel" class="result-card result-card-error mb-4" style="display:none">
+            <h5 class="result-card-title"><i class="bi-exclamation-triangle me-2"></i>Errors</h5>
+            <div id="error-list"></div>
+        </div>
+
+        <!-- Compose + Subtitle settings -->
+        <div id="compose-panel" class="result-card mb-4" style="display:none">
+            <h5 class="result-card-title"><i class="bi-collection-play me-2"></i>Compose Video</h5>
+            <p class="config-hint mb-3">Merge rendered scene clips into the final video. You can change subtitle settings before composing.</p>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-sm-4">
+                    <label class="config-label">Subtitles</label>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <label class="studio-toggle">
+                            <input type="checkbox" id="compose-subtitle-enabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="config-hint mb-0">Enable</span>
+                    </div>
+                </div>
+                <div class="col-sm-5">
+                    <label class="config-label">Subtitle Language</label>
+                    <select id="compose-subtitle-language" class="studio-select mt-1">
+                        <option value="zh-TW">🇹🇼 Chinese (Traditional)</option>
+                        <option value="zh-CN">🇨🇳 Chinese (Simplified)</option>
+                        <option value="en">🇺🇸 English</option>
+                        <option value="ja">🇯🇵 Japanese</option>
+                        <option value="ko">🇰🇷 Korean</option>
+                        <option value="fr">🇫🇷 French</option>
+                        <option value="de">🇩🇪 German</option>
+                        <option value="ar">🇸🇦 Arabic</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <button class="btn custom-btn w-100" id="compose-btn">
+                        <i class="bi-film me-2"></i>Compose
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revision -->
+        <div id="revision-panel" class="result-card mb-4" style="display:none">
+            <h5 class="result-card-title"><i class="bi-pencil me-2"></i>Revision</h5>
+            <p class="config-hint mb-3">Describe what to change in natural language. The AI will route your instruction to the correct scene and agent.</p>
+            <textarea id="revision-text" class="studio-textarea mb-3" rows="3"
+                placeholder='e.g. "Change the circle in scene 2 to red" or "Make narration in scene 3 slower"'></textarea>
+            <div class="d-flex gap-2">
+                <button class="btn custom-btn flex-grow-1" id="revision-btn">
+                    <i class="bi-arrow-clockwise me-2"></i>Submit Revision
+                </button>
+                <button class="btn publish-btn" id="publish-btn">
+                    <i class="bi-send me-1"></i>Approve &amp; Publish
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── RIGHT: Storyboard ───────────────────────────────────────────── -->
+    <div class="result-sidebar">
+        <div class="result-card result-card-sidebar">
+            <h5 class="result-card-title">
+                <i class="bi-card-list me-2"></i>Storyboard
+                <span id="storyboard-count" class="ms-2 scene-count"></span>
+            </h5>
+            <div id="storyboard-list" class="storyboard-grid">
+                <p class="config-hint text-center mt-4">Storyboard will appear here once the script is generated.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─── SCRIPTS ─────────────────────────────────────────────────────────── -->
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="js/result.js"></script>
+
+</body>
+</html>

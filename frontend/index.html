@@ -48,7 +48,6 @@
                 <li class="nav-item"><a class="nav-link click-scroll" href="#section_1">Home</a></li>
                 <li class="nav-item"><a class="nav-link click-scroll" href="#section_2">How It Works</a></li>
                 <li class="nav-item"><a class="nav-link click-scroll" href="#section_3">Studio</a></li>
-                <li class="nav-item"><a class="nav-link click-scroll" href="#section_4">Result</a></li>
                 <li class="nav-item"><a class="nav-link click-scroll" href="#section_5">Pricing</a></li>
             </ul>
             <div class="d-none d-lg-block ms-lg-3">
@@ -320,93 +319,6 @@
     </div>
 </section>
 
-
-<!-- ─── PROGRESS + RESULT ─────────────────────────────────────────────── -->
-<section class="result-section section-padding" id="section_4">
-    <div class="container">
-        <div class="row mb-4">
-            <div class="col-12 text-center">
-                <p class="section-eyebrow">Output</p>
-                <h2>Result</h2>
-            </div>
-        </div>
-
-        <!-- Progress Panel (shown while running) -->
-        <div id="progress-panel" class="studio-card mb-4" style="display:none">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <h5 class="studio-card-title mb-0"><i class="bi-cpu me-2"></i>Pipeline Running</h5>
-                <span id="progress-stage-badge" class="stage-badge">Starting</span>
-            </div>
-            <div class="progress-bar-track mb-2">
-                <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
-            </div>
-            <p class="progress-detail mb-0" id="progress-detail">Initialising...</p>
-        </div>
-
-        <!-- Error Panel -->
-        <div id="error-panel" class="studio-card error-card mb-4" style="display:none">
-            <h5 class="studio-card-title text-danger"><i class="bi-exclamation-triangle me-2"></i>Errors</h5>
-            <div id="error-list"></div>
-        </div>
-
-        <!-- Video Panel -->
-        <div id="video-panel" class="studio-card mb-4" style="display:none">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <h5 class="studio-card-title mb-0"><i class="bi-film me-2"></i>Generated Video</h5>
-                <a id="video-download" class="btn custom-btn btn-sm" href="/api/video" download="animation.mp4">
-                    <i class="bi-download me-1"></i>Download
-                </a>
-            </div>
-            <div class="ratio ratio-16x9 result-video-wrap">
-                <video id="result-video" controls>
-                    <source src="/api/video" type="video/mp4">
-                </video>
-            </div>
-        </div>
-
-        <!-- Compose + Revision Controls -->
-        <div id="controls-panel" style="display:none">
-            <div class="row g-4">
-                <!-- Compose -->
-                <div class="col-lg-4 col-12">
-                    <div class="studio-card">
-                        <h5 class="studio-card-title"><i class="bi-collection-play me-2"></i>Compose</h5>
-                        <p class="config-hint mb-3">Merge rendered clips into final video with current subtitle settings.</p>
-                        <button class="btn custom-btn w-100" id="compose-btn">
-                            <i class="bi-film me-2"></i>Compose Video
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Revision -->
-                <div class="col-lg-8 col-12">
-                    <div class="studio-card">
-                        <h5 class="studio-card-title"><i class="bi-pencil me-2"></i>Revision</h5>
-                        <textarea id="revision-text" class="studio-textarea mb-3" rows="3"
-                            placeholder='e.g. "Change the circle in scene 2 to red" or "Make narration in scene 3 slower"'></textarea>
-                        <div class="d-flex gap-2">
-                            <button class="btn custom-btn flex-grow-1" id="revision-btn">
-                                <i class="bi-arrow-clockwise me-2"></i>Submit Revision
-                            </button>
-                            <button class="btn publish-btn" id="publish-btn">
-                                <i class="bi-send me-1"></i>Publish
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Storyboard -->
-        <div id="storyboard-panel" class="studio-card mt-4" style="display:none">
-            <h5 class="studio-card-title">
-                <i class="bi-card-list me-2"></i>Storyboard
-                <span id="storyboard-count" class="ms-2 scene-count"></span>
-            </h5>
-            <div id="storyboard-list" class="storyboard-grid"></div>
-        </div>
-    </div>
-</section>
 
 
 <!-- ─── PRICING ───────────────────────────────────────────────────────── -->

@@ -62,6 +62,11 @@ def index():
     return send_from_directory("frontend", "index.html")
 
 
+@app.route("/result")
+def result():
+    return send_from_directory("frontend", "result.html")
+
+
 # ─── API: State & Progress ────────────────────────────────────────────────────
 
 @app.route("/api/state")

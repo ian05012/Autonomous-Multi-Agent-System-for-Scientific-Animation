@@ -162,38 +162,10 @@
       });
       const data = await res.json();
       if (data.error) return showToast(data.error, "error");
-      startPolling();
-      scrollTo("#section_4");
-      showToast("Pipeline started!", "success");
+      window.location.href = "/result";
     } catch (err) {
       showToast("Failed to start pipeline: " + err.message, "error");
     }
-  }
-
-  /* ─── Compose ────────────────────────────────────────────────────────────── */
-  async function handleCompose() {
-    const payload = {
-      subtitle_enabled:  $("#subtitle-enabled")?.checked ?? true,
-      subtitle_language: $("#subtitle-language")?.value || "zh-TW",
-    };
-    try {
-      await fetch("/api/compose", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      startPolling();
-      showToast("Composing video...", "success");
-    } catch (err) {
-      showToast("Compose failed: " + err.message, "error");
-    }
-  }
-
-  /* ─── Revision ───────────────────────────────────────────────────────────── */
-  async function handleRevision() {
-    const text = ($("#revision-text")?.value || "").trim();
-    if (!text) return showToast("Please enter a revision instruction.", "error");
-    showToast("Revision support via API coming soon.", "info");
   }
 
   /* ─── Clear ──────────────────────────────────────────────────────────────── */
@@ -201,157 +173,10 @@
     if (!confirm("Clear all generated content and start over?")) return;
     try {
       await fetch("/api/clear", { method: "POST" });
-      stopPolling();
-      hideAllPanels();
       showToast("Cleared.", "success");
     } catch (err) {
       showToast("Clear failed.", "error");
     }
-  }
-
-  /* ─── Polling ────────────────────────────────────────────────────────────── */
-  function startPolling() {
-    isRunning = true;
-    showPanel("#progress-panel");
-    setButtonsDisabled(true);
-    if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(pollProgress, 1500);
-    pollProgress();
-  }
-
-  function stopPolling() {
-    isRunning = false;
-    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-    setButtonsDisabled(false);
-  }
-
-  async function pollProgress() {
-    try {
-      const res  = await fetch("/api/progress");
-      const prog = await res.json();
-
-      updateProgressUI(prog);
-
-      if (prog.done || (!prog.running && prog.pct >= 100)) {
-        stopPolling();
-        hidePanel("#progress-panel");
-        await refreshState();
-      } else if (!prog.running && prog.pct === 0 && !isRunning) {
-        stopPolling();
-      }
-    } catch (_) {}
-  }
-
-  function updateProgressUI(prog) {
-    const fill  = $("#progress-fill");
-    const badge = $("#progress-stage-badge");
-    const detail = $("#progress-detail");
-
-    if (fill)   fill.style.width = (prog.pct || 0) + "%";
-    if (badge)  badge.textContent = prog.stage || "Running";
-    if (detail) detail.textContent = prog.detail || "Processing...";
-  }
-
-  /* ─── State refresh ──────────────────────────────────────────────────────── */
-  async function loadInitialState() {
-    try {
-      const res   = await fetch("/api/state");
-      const state = await res.json();
-      if (state.status !== "empty") renderState(state);
-    } catch (_) {}
-  }
-
-  async function refreshState() {
-    try {
-      const res   = await fetch("/api/state");
-      const state = await res.json();
-      renderState(state);
-    } catch (_) {}
-  }
-
-  function renderState(state) {
-    const hasClips = state.has_video_clips;
-    const hasVideo = !!state.final_video_path;
-    const hasStoryboard = state.storyboard && state.storyboard.length > 0;
-    const hasErrors = state.error_log && state.error_log.length > 0;
-
-    // Controls
-    if (hasClips || hasVideo) showPanel("#controls-panel");
-
-    // Video
-    if (hasVideo) {
-      showPanel("#video-panel");
-      const v = $("#result-video");
-      if (v) { v.load(); }
-    }
-
-    // Errors
-    if (hasErrors) {
-      showPanel("#error-panel");
-      const list = $("#error-list");
-      if (list) {
-        list.innerHTML = state.error_log.map((e) => `<p>• ${escHtml(e)}</p>`).join("");
-      }
-    } else {
-      hidePanel("#error-panel");
-    }
-
-    // Storyboard
-    if (hasStoryboard) {
-      showPanel("#storyboard-panel");
-      const count = $("#storyboard-count");
-      if (count) count.textContent = `${state.storyboard.length} scenes`;
-      renderStoryboard(state.storyboard);
-    }
-  }
-
-  function renderStoryboard(scenes) {
-    const list = $("#storyboard-list");
-    if (!list) return;
-    const STATUS_ICON = { done: "✅", error: "❌", pending: "⏳" };
-    list.innerHTML = scenes.map((s) => `
-      <div class="scene-card">
-        <span class="scene-id">Scene ${s.scene_id}</span>
-        <span class="scene-status">${STATUS_ICON[s.status] || "⏳"}</span>
-        <div class="scene-body">
-          <p class="scene-narration">${escHtml(s.narration.slice(0, 120))}${s.narration.length > 120 ? "…" : ""}</p>
-          <p class="scene-visual">${escHtml(s.visual_description.slice(0, 80))}${s.visual_description.length > 80 ? "…" : ""}</p>
-        </div>
-      </div>
-    `).join("");
-  }
-
-  /* ─── UI helpers ─────────────────────────────────────────────────────────── */
-  function showPanel(sel) {
-    const el = $(sel);
-    if (el) el.style.display = "block";
-  }
-  function hidePanel(sel) {
-    const el = $(sel);
-    if (el) el.style.display = "none";
-  }
-  function hideAllPanels() {
-    ["#progress-panel","#error-panel","#video-panel","#controls-panel","#storyboard-panel"]
-      .forEach(hidePanel);
-  }
-
-  function setButtonsDisabled(disabled) {
-    ["#generate-btn","#compose-btn","#revision-btn"].forEach((sel) => {
-      const btn = $(sel);
-      if (btn) btn.disabled = disabled;
-    });
-    if (disabled) {
-      const btn = $("#generate-btn");
-      if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running...';
-    } else {
-      const btn = $("#generate-btn");
-      if (btn) btn.innerHTML = '<i class="bi-play-fill me-2"></i>Generate Animation';
-    }
-  }
-
-  function scrollTo(sel) {
-    const el = $(sel);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function escHtml(str) {
