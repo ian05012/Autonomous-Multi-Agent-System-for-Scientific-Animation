@@ -97,7 +97,7 @@ def _burn_subtitles(video_path: str, srt_path: str, output_path: str) -> None:
     cmd = [
         "ffmpeg", "-y",
         "-i", video_path,
-        "-vf", f"subtitles='{srt_escaped}':force_style='FontSize=20,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2,Shadow=1,Alignment=2,MarginV=30'",
+        "-vf", f"subtitles='{srt_escaped}':force_style='FontSize=18,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2,Shadow=1,Alignment=2,MarginV=60,BackColour=&H80000000,BorderStyle=4'",
         "-c:a", "copy",
         output_path,
     ]

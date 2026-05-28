@@ -55,6 +55,28 @@ def _seconds_to_srt_time(seconds: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
 
 
+def _split_into_segments(text: str) -> list[str]:
+    """Split narration into short subtitle segments (sentences, then long phrases)."""
+    import re
+    # Split on sentence-ending punctuation (supports CJK and Latin)
+    sentences = re.split(r'(?<=[.!?。！？])\s*', text.strip())
+    segments: list[str] = []
+    for sent in sentences:
+        sent = sent.strip()
+        if not sent:
+            continue
+        # Further split long sentences at comma/semicolon boundaries
+        if len(sent) > 60:
+            parts = re.split(r'(?<=[,;，；])\s*', sent)
+            for part in parts:
+                part = part.strip()
+                if part:
+                    segments.append(part)
+        else:
+            segments.append(sent)
+    return segments if segments else [text.strip()]
+
+
 def _translate_texts(texts: list[str], target_language: str) -> list[str]:
     """Translate a list of narration texts to the target language using LLM."""
     from langchain_openai import ChatOpenAI
@@ -138,25 +160,40 @@ def generate_srt(
     else:
         texts = narrations
 
-    # Build SRT content
+    # Build SRT content — split each scene into sentence-level segments
     srt_lines: list[str] = []
     current_time = 0.0
+    entry_idx = 1
 
-    for idx, (scene, text) in enumerate(zip(scenes_with_audio, texts), start=1):
+    for scene, text in zip(scenes_with_audio, texts):
         audio = audio_by_scene[scene["scene_id"]]
         duration = audio["duration_seconds"]
 
-        start_ts = _seconds_to_srt_time(current_time)
-        end_ts = _seconds_to_srt_time(current_time + duration)
+        segments = _split_into_segments(text)
 
-        srt_lines.append(str(idx))
-        srt_lines.append(f"{start_ts} --> {end_ts}")
-        srt_lines.append(text)
-        srt_lines.append("")
+        # Distribute scene duration proportionally by character count
+        total_chars = sum(len(s) for s in segments) or 1
+        seg_offset = 0.0
+        for i, seg in enumerate(segments):
+            seg_duration = (len(seg) / total_chars) * duration
+            # Last segment absorbs any rounding remainder
+            if i == len(segments) - 1:
+                seg_duration = duration - seg_offset
+
+            start_ts = _seconds_to_srt_time(current_time + seg_offset)
+            end_ts   = _seconds_to_srt_time(current_time + seg_offset + seg_duration)
+
+            srt_lines.append(str(entry_idx))
+            srt_lines.append(f"{start_ts} --> {end_ts}")
+            srt_lines.append(seg)
+            srt_lines.append("")
+
+            entry_idx += 1
+            seg_offset += seg_duration
 
         current_time += duration
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     Path(output_path).write_text("\n".join(srt_lines), encoding="utf-8")
-    print(f"  [Subtitles] Written {len(scenes_with_audio)} subtitle entries → {output_path}")
+    print(f"  [Subtitles] Written {entry_idx - 1} subtitle entries ({len(scenes_with_audio)} scenes) → {output_path}")
     return output_path
