@@ -19,8 +19,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
+from tools.llm_factory import make_animator_llm
 
 from state import PipelineState, SceneSpec, AudioMeta, VideoMeta, save_state
 from tools.manim_runner import (
@@ -358,7 +358,7 @@ def animator_node(state: PipelineState) -> dict[str, Any]:
     # Build audio duration lookup by scene_id
     audio_by_scene = {a["scene_id"]: a for a in audio_files}
 
-    llm = ChatOpenAI(model=_llm_model(), temperature=0.2)
+    llm = make_animator_llm(temperature=0.2)
 
     # HITL partial revision support
     revision_target = state.get("revision_target")
@@ -389,7 +389,7 @@ def animator_node(state: PipelineState) -> dict[str, Any]:
         print(f"  [Animator] Processing scene {scene_id} (target: {target_duration}s)...")
         try:
             # Each thread needs its own LLM instance (not thread-safe to share)
-            thread_llm = ChatOpenAI(model=_llm_model(), temperature=0.2)
+            thread_llm = make_animator_llm(temperature=0.2)
             video_meta, _ = _render_with_correction(scene, target_duration, thread_llm)
             print(f"  [Animator] Scene {scene_id} — done ✓")
             return scene_id, video_meta, None

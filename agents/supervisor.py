@@ -29,9 +29,9 @@ from __future__ import annotations
 import os
 from typing import Any, Literal
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import StateGraph, END
+from tools.llm_factory import make_llm
 
 from state import (
     PipelineState,
@@ -163,7 +163,7 @@ def revision_router_node(state: PipelineState) -> dict[str, Any]:
         for s in storyboard
     )
 
-    llm = ChatOpenAI(model=_llm_model(), temperature=0)
+    llm = make_llm(temperature=0)
     response = llm.invoke([
         SystemMessage(content=REVISION_ROUTER_SYSTEM),
         HumanMessage(

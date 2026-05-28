@@ -13,8 +13,8 @@ import json
 import os
 from typing import Any
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
+from tools.llm_factory import make_llm
 
 from state import PipelineState, save_state
 
@@ -96,7 +96,7 @@ def social_media_node(state: PipelineState) -> dict[str, Any]:
         error_msg = "SocialMedia: No final video path in state. Run composition first."
         return {"error_log": [error_msg]}
 
-    llm = ChatOpenAI(model=_llm_model(), temperature=0.5)
+    llm = make_llm(temperature=0.5)
 
     # Generate content
     youtube_url = None

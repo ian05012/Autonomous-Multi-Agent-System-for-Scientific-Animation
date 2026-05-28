@@ -16,8 +16,8 @@ import os
 import time
 from typing import Any
 
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
+from tools.llm_factory import make_llm
 
 from state import PipelineState, SceneSpec, save_state
 
@@ -109,7 +109,7 @@ def scriptwriter_node(state: PipelineState) -> dict[str, Any]:
     # 2. Call LLM to generate storyboard
     from tools.progress import update as _prog
     _prog(5, "Scriptwriter", "Generating storyboard from article...")
-    llm = ChatOpenAI(model=_llm_model(), temperature=0.3)
+    llm = make_llm(temperature=0.3)
 
     system_msg = SystemMessage(
         content=SYSTEM_PROMPT.format(min_scenes=MIN_SCENES, max_scenes=MAX_SCENES)

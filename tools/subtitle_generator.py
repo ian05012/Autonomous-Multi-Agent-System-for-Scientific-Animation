@@ -79,11 +79,11 @@ def _split_into_segments(text: str) -> list[str]:
 
 def _translate_texts(texts: list[str], target_language: str) -> list[str]:
     """Translate a list of narration texts to the target language using LLM."""
-    from langchain_openai import ChatOpenAI
     from langchain_core.messages import SystemMessage, HumanMessage
+    from tools.llm_factory import make_llm
 
     lang_name = LANGUAGE_NAMES.get(target_language, target_language)
-    llm = ChatOpenAI(model=_llm_model(), temperature=0)
+    llm = make_llm(temperature=0)
 
     numbered = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
     system = SystemMessage(content=(
