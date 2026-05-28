@@ -107,8 +107,10 @@ def scriptwriter_node(state: PipelineState) -> dict[str, Any]:
         raise RuntimeError(error_msg) from exc
 
     # 2. Call LLM to generate storyboard
-    from tools.progress import update as _prog
+    from tools.progress import update as _prog, log as _log
     _prog(5, "Scriptwriter", "Generating storyboard from article...")
+    _log(f"Reading article: \"{doc['title'][:60]}\"", stage="Scriptwriter")
+    _log("Generating storyboard with LLM...", stage="Scriptwriter")
     llm = make_llm(temperature=0.3)
 
     system_msg = SystemMessage(
@@ -181,6 +183,9 @@ def scriptwriter_node(state: PipelineState) -> dict[str, Any]:
         )
 
     _prog(15, "Scriptwriter", f"Storyboard ready — {len(storyboard)} scenes")
+    _log(f"Storyboard ready — {len(storyboard)} scenes:", stage="Scriptwriter", kind="success")
+    for s in storyboard:
+        _log(f"  Scene {s['scene_id']}: {s['narration'][:80]}…", stage="Scriptwriter")
 
     # 4. Persist state and return update
     updated_state = {**state, "storyboard": storyboard}

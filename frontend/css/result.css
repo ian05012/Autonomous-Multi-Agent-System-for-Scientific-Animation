@@ -221,3 +221,35 @@
   padding: 2px 8px;
   font-weight: 400;
 }
+
+/* ─── Pipeline log ───────────────────────────────────────────────────────── */
+.pipeline-log {
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.pipeline-log::-webkit-scrollbar { width: 4px; }
+.pipeline-log::-webkit-scrollbar-track { background: var(--bg-secondary); }
+.pipeline-log::-webkit-scrollbar-thumb { background: var(--border-cyan); border-radius: 2px; }
+
+.log-entry { display: flex; gap: 8px; padding: 1px 0; }
+.log-ts    { color: var(--text-muted); flex-shrink: 0; min-width: 42px; }
+.log-stage { flex-shrink: 0; min-width: 72px; font-weight: 600; }
+.log-msg   { color: var(--text-secondary); word-break: break-word; }
+
+.log-info    .log-stage { color: var(--cyan); }
+.log-success .log-stage { color: var(--green, #10B981); }
+.log-success .log-msg   { color: #a3e6a3; }
+.log-error   .log-stage { color: #f87171; }
+.log-error   .log-msg   { color: #fca5a5; }
+.log-design  .log-stage { color: #c084fc; }
+.log-design  .log-msg   { color: #d8b4fe; }
+.log-warn    .log-stage { color: #fbbf24; }
+.log-warn    .log-msg   { color: #fde68a; }

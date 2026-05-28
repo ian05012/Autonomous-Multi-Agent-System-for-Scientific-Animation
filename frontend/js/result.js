@@ -77,6 +77,8 @@
     } catch (_) {}
   }
 
+  let _lastLogCount = 0;
+
   function updateProgress(prog) {
     const fill   = $("#progress-fill");
     const badge  = $("#progress-stage-badge");
@@ -95,6 +97,32 @@
         navBadge.style.display = "none";
       }
     }
+
+    // Render new log entries
+    if (prog.logs && prog.logs.length > _lastLogCount) {
+      const newEntries = prog.logs.slice(_lastLogCount);
+      _lastLogCount = prog.logs.length;
+      renderLogs(newEntries);
+    }
+  }
+
+  function renderLogs(entries) {
+    const container = $("#pipeline-log");
+    if (!container) return;
+
+    entries.forEach((e) => {
+      const row = document.createElement("div");
+      row.className = `log-entry log-${e.kind || "info"}`;
+      const t = typeof e.t === "number" ? `+${e.t.toFixed(1)}s` : "";
+      row.innerHTML = `
+        <span class="log-ts">${esc(t)}</span>
+        <span class="log-stage">${esc(e.stage || "")}</span>
+        <span class="log-msg">${esc(e.msg || "")}</span>`;
+      container.appendChild(row);
+    });
+
+    // Auto-scroll to bottom
+    container.scrollTop = container.scrollHeight;
   }
 
   /* ─── Load state ─────────────────────────────────────────────────────────── */

@@ -373,6 +373,7 @@ def _validate_timing(code: str, target_duration: float) -> None:
 
 def _design_scene(scene: SceneSpec, target_duration: float, llm: ChatOpenAI) -> str:
     """Stage 1: generate a structured design document (objects, layout, shot plan)."""
+    from tools.progress import log as _log
     system_msg = SystemMessage(
         content=DESIGN_SYSTEM.format(target_duration=target_duration)
     )
@@ -385,6 +386,11 @@ def _design_scene(scene: SceneSpec, target_duration: float, llm: ChatOpenAI) -> 
     )
     response = llm.invoke([system_msg, human_msg])
     design = response.content.strip()
+    _log(f"Scene {scene['scene_id']} design ready", stage="Animator", kind="design")
+    # Log the design doc (truncated) so it shows in the frontend
+    for line in design.split("\n")[:20]:
+        if line.strip():
+            _log(f"  {line}", stage="Animator", kind="design")
     print(f"    [Animator] Scene {scene['scene_id']} design:\n{design[:300]}...")
     return design
 
@@ -479,7 +485,11 @@ def _render_with_correction(
     Raises:
         RuntimeError: If all MAX_RETRIES attempts fail.
     """
+    from tools.progress import log as _log
+    sid = scene["scene_id"]
+
     # ── Stage 1: Scene Design ──────────────────────────────────────────────────
+    _log(f"Scene {sid}: designing layout & shot plan...", stage="Animator")
     scene_design = ""
     for attempt in range(3):
         try:
@@ -489,10 +499,11 @@ def _render_with_correction(
             if "429" in str(exc) and attempt < 2:
                 time.sleep(30 * (attempt + 1))
             else:
-                print(f"    [Animator] Design stage failed ({exc}), proceeding without design.")
+                _log(f"Scene {sid}: design stage failed, generating without spec", stage="Animator", kind="warn")
                 break
 
     # ── Stage 2: Code Generation ───────────────────────────────────────────────
+    _log(f"Scene {sid}: generating Manim code...", stage="Animator")
     for gen_attempt in range(3):
         try:
             code = _generate_code(scene, target_duration, llm, scene_design=scene_design)
@@ -500,7 +511,7 @@ def _render_with_correction(
         except Exception as exc:
             if "429" in str(exc) and gen_attempt < 2:
                 wait = 35 * (gen_attempt + 1)
-                print(f"    [Animator] Rate-limited (429) on code gen, retrying in {wait}s...")
+                _log(f"Scene {sid}: rate limited, retrying in {wait}s...", stage="Animator", kind="warn")
                 time.sleep(wait)
             else:
                 raise
@@ -576,9 +587,10 @@ def animator_node(state: PipelineState) -> dict[str, Any]:
     error_messages: list[str] = []
     _lock = threading.Lock()
 
-    from tools.progress import update as _prog
+    from tools.progress import update as _prog, log as _log
     total_scenes = len(scenes_to_process)
     completed_count = 0
+    _log(f"Rendering {total_scenes} scenes ({PARALLEL_WORKERS} parallel workers)...", stage="Animator")
 
     def _process_scene(scene: SceneSpec) -> tuple[int, VideoMeta | None, str | None]:
         """Process one scene; returns (scene_id, video_meta_or_None, error_or_None)."""
@@ -592,10 +604,12 @@ def animator_node(state: PipelineState) -> dict[str, Any]:
             # Each thread needs its own LLM instance (not thread-safe to share)
             thread_llm = make_animator_llm(temperature=0.2)
             video_meta, _ = _render_with_correction(scene, target_duration, thread_llm)
+            _log(f"Scene {scene_id} rendered ✓  ({video_meta['duration_seconds']:.1f}s)", stage="Animator", kind="success")
             print(f"  [Animator] Scene {scene_id} — done ✓")
             return scene_id, video_meta, None
         except Exception as exc:
             err = f"Animator: Scene {scene_id} permanently failed — {exc}"
+            _log(f"Scene {scene_id} failed: {str(exc)[:120]}", stage="Animator", kind="error")
             print(f"  [Animator] ERROR: {err}")
             return scene_id, None, err
 

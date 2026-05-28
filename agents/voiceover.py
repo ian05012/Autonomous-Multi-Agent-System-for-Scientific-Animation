@@ -68,8 +68,9 @@ def voiceover_node(state: PipelineState) -> dict[str, Any]:
         audio_files = [a for a in state.get("audio_files", [])
                        if a["scene_id"] != target_scene_id]
 
-    from tools.progress import update as _prog
+    from tools.progress import update as _prog, log as _log
     total = len(scenes_to_process)
+    _log(f"Synthesizing voiceover for {total} scenes...", stage="Voiceover")
 
     for i, scene in enumerate(scenes_to_process):
         scene_id = scene["scene_id"]
@@ -78,10 +79,12 @@ def voiceover_node(state: PipelineState) -> dict[str, Any]:
 
         pct = 15 + int((i / total) * 20)
         _prog(pct, "Voiceover", f"Synthesizing scene {scene_id}/{total}")
+        _log(f"Scene {scene_id}/{total}: {narration[:60]}…", stage="Voiceover")
         print(f"  [Voiceover] Synthesizing scene {scene_id}...")
         try:
             audio_meta = _synthesize_with_retry(narration, output_path, scene_id)
             audio_files.append(audio_meta)
+            _log(f"Scene {scene_id} ✓  ({audio_meta['duration_seconds']}s)", stage="Voiceover", kind="success")
             print(f"  [Voiceover] Scene {scene_id}: {audio_meta['duration_seconds']}s")
         except Exception as exc:
             error_msg = (
@@ -89,6 +92,7 @@ def voiceover_node(state: PipelineState) -> dict[str, Any]:
                 f"after {MAX_RETRIES} retries — {exc}"
             )
             error_messages.append(error_msg)
+            _log(f"Scene {scene_id} failed: {exc}", stage="Voiceover", kind="error")
             print(f"  [Voiceover] ERROR: {error_msg}")
 
     # Sort by scene_id for consistency
