@@ -110,13 +110,20 @@ def api_generate():
     if not input_text.strip():
         return jsonify({"error": "No input provided"}), 400
 
+    # Clear previous generation before starting a new one
+    import shutil as _shutil
+    if Path(STATE_PATH).exists():
+        Path(STATE_PATH).unlink()
+    for clear_dir in ["output/audio", "output/video", "output/final",
+                      "output/manim_tmp", "output/manim_workspace"]:
+        if Path(clear_dir).exists():
+            _shutil.rmtree(clear_dir, ignore_errors=True)
+
     _apply_model_tier(model_tier)
     os.environ["GOOGLE_TTS_LANGUAGE"] = tts_language
     os.environ["SUBTITLE_ENABLED"] = "true" if subtitle_enabled else "false"
     os.environ["SUBTITLE_LANGUAGE"] = subtitle_language
 
-    # Mark running=True before the thread starts so the first progress poll
-    # doesn't see running=False and immediately stop polling.
     from tools.progress import update as _prog_update
     _prog_update(0, "Starting", "Initialising pipeline...")
 
