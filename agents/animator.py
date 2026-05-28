@@ -60,10 +60,35 @@ CRITICAL RULES:
      NumberPlane, Axes (no plots), SurroundingRectangle, Brace.
    - NO 3D, NO particle systems, NO SVGMobject, NO ImageMobject, NO external files.
    - You may use FadeIn, FadeOut, Write, Create, Transform, ReplacementTransform,
-     GrowArrow, DrawBorderThenFill, Indicate, Flash for animations.
+     GrowArrow, DrawBorderThenFill, Indicate, Flash, Succession for animations.
 7. NEVER use self.wait() with values > 3.
 8. Add self.wait() calls as needed, but their time is INCLUDED in total duration.
 9. Return ONLY the Python code. No markdown, no explanation.
+
+MANIM BEST PRACTICES (from manim_skill):
+ANIMATIONS:
+- Use `.animate` for chaining transforms: `self.play(obj.animate.shift(RIGHT).scale(2), run_time=1)`
+- Prefer `rate_func=smooth` (default) for natural easing.
+- Play multiple animations simultaneously: `self.play(FadeIn(a), Create(b), run_time=1)`.
+- NEVER use ShowCreation (use Create), TextMobject/TexMobject (use Text), ApplyMethod (use .animate).
+
+MOBJECTS:
+- Use `VGroup` to group related objects: `group = VGroup(a, b, c); group.arrange(RIGHT, buff=0.3)`.
+- Method chaining: `Circle(radius=1).set_color(BLUE).shift(LEFT * 2)`.
+- Use `.next_to(other, direction, buff=0.2)` for relative positioning.
+- Use `.copy()` before transforming to keep the original: `self.play(TransformFromCopy(src, dst))`.
+
+COLORS:
+- Use shade variants for depth: `BLUE_B` (light), `BLUE_D` (dark).
+- Gradients: `obj.set_color_by_gradient(BLUE, GREEN)`.
+- Set fill and stroke separately: `obj.set_fill(YELLOW, opacity=0.5).set_stroke(WHITE, width=2)`.
+- High contrast: use bright colors on the default BLACK background.
+
+TEXT:
+- `Text("label", font_size=36, color=WHITE)` — always specify font_size explicitly.
+- `MarkupText('<b>bold</b> and <span fgcolor="#FF0000">red</span>')` for mixed styles.
+- `label.next_to(obj, DOWN, buff=0.2)` to place labels near shapes.
+- Animate with `Write(text)` for handwriting effect or `FadeIn(text, shift=UP)`.
 """
 
 GENERATION_HUMAN = """Create a Manim animation for this scene:
@@ -76,7 +101,7 @@ Sum of all run_time arguments in self.play() and self.wait() calls = {target_dur
 
 Generate the AnimatedScene class code now:"""
 
-CORRECTION_SYSTEM = """You are an expert Manim CE debugger. 
+CORRECTION_SYSTEM = """You are an expert Manim CE debugger.
 Fix the Manim Python code based on the error below.
 
 ERROR TYPE: {error_type}
@@ -89,6 +114,8 @@ RULES:
 - Use only manim CE ≥ 0.18 public API.
 - NEVER use MathTex, Tex, or any LaTeX — use Text() for everything.
 - Use at most 5 mobjects. Simple is better.
+- NEVER use ShowCreation (use Create), TextMobject (use Text), ApplyMethod (use .animate).
+- Use `.animate` for transforms, `VGroup` for grouping, `next_to()` for positioning.
 """
 
 CORRECTION_HUMAN = """ORIGINAL CODE:

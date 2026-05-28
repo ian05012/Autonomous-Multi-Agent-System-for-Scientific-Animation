@@ -141,6 +141,7 @@ MANIM_DOC_URLS = [
 ]
 
 EXAMPLES_DIR = Path(__file__).parent / "examples"
+SKILLS_DIR   = Path(__file__).parent / "skills"
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -222,6 +223,19 @@ def _load_examples() -> list[tuple[str, dict]]:
     return docs_with_meta
 
 
+def _load_skills() -> list[tuple[str, dict]]:
+    """Load Manim best-practice skill files from rag/skills/*.md."""
+    docs = []
+    if not SKILLS_DIR.exists():
+        return docs
+    for md_file in sorted(SKILLS_DIR.glob("*.md")):
+        content = md_file.read_text(encoding="utf-8")
+        text = f"# Manim Skill: {md_file.stem}\n{content}"
+        docs.append((text, {"source": str(md_file), "type": "skill"}))
+    print(f"  Loaded {len(docs)} skill files from {SKILLS_DIR}")
+    return docs
+
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def build_index(rebuild: bool = False, validate_first: bool = False) -> None:
@@ -281,7 +295,16 @@ def build_index(rebuild: bool = False, validate_first: bool = False) -> None:
             )
     print(f"  → {len(all_documents)} chunks from documentation pages")
 
-    # 2. Index curated examples
+    # 2. Index skill best-practice files (always included, no validation needed)
+    print(f"\nLoading Manim skill files from {SKILLS_DIR}...")
+    skill_docs = _load_skills()
+    for text, meta in skill_docs:
+        chunks = splitter.split_text(text)
+        for chunk in chunks:
+            all_documents.append(Document(page_content=chunk, metadata=meta))
+    print(f"  → {len(skill_docs)} skill files indexed")
+
+    # 3. Index curated examples
     print(f"\nLoading curated examples from {EXAMPLES_DIR}...")
     example_docs = _load_examples()
     for text, meta in example_docs:
