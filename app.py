@@ -71,6 +71,38 @@ st.markdown("""
 
 # ─── Session state initialization ────────────────────────────────────────────
 
+MODEL_TIERS = {
+    "paid": {
+        "label": "Paid — OpenAI",
+        "base_url": "",
+        "llm_model": "gpt-5",
+        "animator_model": "gpt-5.1-codex",
+        "api_key_env": "OPENAI_API_KEY",
+    },
+    "free": {
+        "label": "Free — OpenRouter",
+        "base_url": "https://openrouter.ai/api/v1",
+        "llm_model": "openai/gpt-oss-20b:free",
+        "animator_model": "openai/gpt-oss-120b:free",
+        "api_key_env": "OPENROUTER_API_KEY",
+    },
+}
+
+
+def _apply_model_tier(tier: str) -> None:
+    """Update os.environ to match the selected model tier before pipeline runs."""
+    cfg = MODEL_TIERS[tier]
+    api_key = os.getenv(cfg["api_key_env"], "")
+    if api_key:
+        os.environ["OPENAI_API_KEY"] = api_key
+    if cfg["base_url"]:
+        os.environ["OPENAI_BASE_URL"] = cfg["base_url"]
+    else:
+        os.environ.pop("OPENAI_BASE_URL", None)
+    os.environ["LLM_MODEL"] = cfg["llm_model"]
+    os.environ["ANIMATOR_MODEL"] = cfg["animator_model"]
+
+
 def _init_session() -> None:
     """Initialize Streamlit session state from disk or defaults."""
     if "pipeline_state" not in st.session_state:
@@ -80,6 +112,8 @@ def _init_session() -> None:
         st.session_state.pipeline_running = False
     if "status_message" not in st.session_state:
         st.session_state.status_message = ""
+    if "model_tier" not in st.session_state:
+        st.session_state.model_tier = "paid"
 
 
 # ─── Sidebar: Input & Pipeline Control ────────────────────────────────────────
@@ -89,6 +123,19 @@ def _render_sidebar() -> None:
         st.markdown("## 🎬 Science Animation Studio")
         st.markdown("---")
 
+        st.markdown("### ⚡ Model")
+        tier = st.radio(
+            "Model tier",
+            options=["paid", "free"],
+            format_func=lambda x: "💳 Paid — OpenAI (gpt-5)" if x == "paid" else "🆓 Free — OpenRouter",
+            key="model_tier",
+            horizontal=True,
+            help="Paid uses OpenAI gpt-5 / gpt-5.1-codex. Free uses OpenRouter free models (may have rate limits).",
+        )
+        cfg = MODEL_TIERS[tier]
+        st.caption(f"Scriptwriter: `{cfg['llm_model']}`  |  Animator: `{cfg['animator_model']}`")
+
+        st.markdown("---")
         st.markdown("### 📄 Input")
         source_type = st.selectbox(
             "Input type",
@@ -175,6 +222,7 @@ def _start_pipeline(
     input_path: Optional[str] = None,
 ) -> None:
     """Start the pipeline in a background thread."""
+    _apply_model_tier(st.session_state.get("model_tier", "paid"))
     initial_state = make_initial_state(input_value, source_type, input_path)  # type: ignore
     st.session_state.pipeline_state = initial_state
     st.session_state.pipeline_running = True
