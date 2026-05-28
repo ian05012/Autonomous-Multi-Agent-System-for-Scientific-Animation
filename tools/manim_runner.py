@@ -174,6 +174,7 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
                 command=cmd,
                 volumes={volume_host_path: {"bind": "/workspace", "mode": "rw"}},
                 working_dir="/workspace",
+                user="root",    # avoid manimuser permission errors on bind-mounted dirs
                 remove=False,   # keep container so we can kill it on timeout
                 detach=True,
                 stdout=True,
