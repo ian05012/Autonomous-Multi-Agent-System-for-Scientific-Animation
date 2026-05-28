@@ -5,8 +5,9 @@
 
   const $ = (sel) => document.querySelector(sel);
 
-  let pollInterval = null;
-  let wasRunning   = false;
+  let pollInterval  = null;
+  let wasRunning    = false;
+  let pollStartTime = Date.now();
 
   /* ─── Init ───────────────────────────────────────────────────────────────── */
   document.addEventListener("DOMContentLoaded", () => {
@@ -36,6 +37,7 @@
   /* ─── Polling ────────────────────────────────────────────────────────────── */
   function startPolling() {
     if (pollInterval) return;
+    pollStartTime = Date.now();
     pollInterval = setInterval(poll, 1500);
     poll();
   }
@@ -67,8 +69,9 @@
         await loadState();
       }
 
-      // Not running, nothing pending — stop polling
-      if (!prog.running && !wasRunning) {
+      // Not running, nothing pending — stop polling only after 10s grace period
+      // (avoids stopping before the pipeline thread has had a chance to start)
+      if (!prog.running && !wasRunning && Date.now() - pollStartTime > 10000) {
         stopPolling();
       }
     } catch (_) {}
