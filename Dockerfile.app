@@ -1,10 +1,11 @@
 FROM python:3.13-slim
 
-# ffmpeg for video composition, libsndfile for audio, build-essential for chromadb native bits
+# ffmpeg, audio libs, build tools, and CJK fonts for subtitle rendering
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libsndfile1 \
     build-essential \
+    fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

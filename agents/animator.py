@@ -69,8 +69,59 @@ CRITICAL RULES:
 8. Add self.wait() calls as needed, but their time is INCLUDED in total duration.
 9. Return ONLY the Python code. No markdown, no explanation.
 
-MANIM BEST PRACTICES (from manim_skill):
-ANIMATIONS:
+════════════════════════════════════════════
+LAYOUT & POSITIONING RULES (CRITICAL — prevents out-of-bounds and overlaps)
+════════════════════════════════════════════
+
+SCREEN BOUNDARIES (16:9 canvas):
+- The safe area is: X ∈ [-6.5, 6.5], Y ∈ [-3.5, 3.5].
+- NEVER place any mobject outside these bounds. Check with get_left(), get_right(), get_top(), get_bottom().
+- Use `obj.scale_to_fit_width(W)` or `obj.scale_to_fit_height(H)` to resize if too large.
+- Reserve margins: keep all elements at least 0.3 units away from screen edges.
+
+POSITIONING BEST PRACTICES (from manim_skill positioning rules):
+- Origin (0,0,0) is the screen CENTER. X: LEFT(-)→RIGHT(+). Y: DOWN(-)→UP(+).
+- Use `.move_to(ORIGIN)` to center an object.
+- Use `.next_to(other, direction, buff=0.3)` for relative positioning — PREFERRED over raw coordinates.
+  Example: `label.next_to(circle, DOWN, buff=0.3)` places label below the circle.
+- Use `.shift(RIGHT * 2)` for relative movement.
+- Direction constants: UP, DOWN, LEFT, RIGHT, UL (upper-left), UR (upper-right), DL, DR.
+- Use `.align_to(other, LEFT)` to align edges.
+- Use `.get_center()`, `.get_top()`, `.get_bottom()`, `.get_left()`, `.get_right()` for anchor points.
+
+GROUPING & LAYOUT (from manim_skill grouping rules):
+- Use `VGroup(a, b, c).arrange(RIGHT, buff=0.5)` to auto-layout items in a row WITHOUT overlap.
+- Use `.arrange(DOWN, buff=0.4)` for vertical stacks.
+- Use `.arrange_in_grid(rows=2, cols=3, buff=0.5)` for grid layouts.
+- After arranging, call `.move_to(ORIGIN)` or `.shift(...)` to place the group on screen.
+- Always call `.arrange(...)` BEFORE `.shift(...)` or `.move_to(...)`.
+- Example of safe multi-object layout:
+    items = VGroup(Text("A", font_size=32), Text("B", font_size=32), Text("C", font_size=32))
+    items.arrange(RIGHT, buff=0.6).move_to(ORIGIN)
+
+AVOIDING OVERLAP (MANDATORY):
+- NEVER place two objects at the same coordinates.
+- When adding a new object near an existing one, ALWAYS use `.next_to()` with a buff ≥ 0.2.
+- For title + body layouts: title at top (UP * 3 or UP * 2.5), body below (ORIGIN or slightly down).
+- For side-by-side: left object at LEFT * 3, right at RIGHT * 3.
+- Before animating, verify that bounding boxes do NOT intersect.
+- If you have a title, place it at: `title.to_edge(UP, buff=0.5)` — this keeps it in bounds.
+- For labels near shapes: `label.next_to(shape, DOWN, buff=0.2)` — no overlap guaranteed.
+
+SCALING TO FIT:
+- Text with long strings: use `font_size=28` or smaller. Long text MUST be scaled down.
+- If a VGroup is too wide: `group.scale_to_fit_width(12)` (max safe width = 12 units).
+- If a VGroup is too tall: `group.scale_to_fit_height(6)` (max safe height = 6 units).
+- NEVER use font_size > 48 for body text; NEVER use font_size > 60 for titles.
+
+CLEANING UP BETWEEN STAGES:
+- When transitioning to a new concept, FadeOut old objects before adding new ones.
+- Pattern: `self.play(FadeOut(old_group), run_time=0.5)` then add new objects.
+- Avoid accumulating too many objects on screen simultaneously.
+
+════════════════════════════════════════════
+ANIMATIONS (from manim_skill animation rules):
+════════════════════════════════════════════
 - Use `.animate` for chaining transforms: `self.play(obj.animate.shift(RIGHT).scale(2), run_time=1)`
 - Prefer `rate_func=smooth` (default) for natural easing.
 - Play multiple animations simultaneously: `self.play(FadeIn(a), Create(b), run_time=1)`.
@@ -88,11 +139,12 @@ COLORS:
 - Set fill and stroke separately: `obj.set_fill(YELLOW, opacity=0.5).set_stroke(WHITE, width=2)`.
 - High contrast: use bright colors on the default BLACK background.
 
-TEXT:
+TEXT (from manim_skill text rules):
 - `Text("label", font_size=36, color=WHITE)` — always specify font_size explicitly.
 - `MarkupText('<b>bold</b> and <span fgcolor="#FF0000">red</span>')` for mixed styles.
 - `label.next_to(obj, DOWN, buff=0.2)` to place labels near shapes.
 - Animate with `Write(text)` for handwriting effect or `FadeIn(text, shift=UP)`.
+- For multi-line text, use smaller font_size (≤ 32) to prevent overflow.
 """
 
 GENERATION_HUMAN = """Create a Manim animation for this scene:
@@ -120,6 +172,16 @@ RULES:
 - Use at most 5 mobjects. Simple is better.
 - NEVER use ShowCreation (use Create), TextMobject (use Text), ApplyMethod (use .animate).
 - Use `.animate` for transforms, `VGroup` for grouping, `next_to()` for positioning.
+
+LAYOUT CORRECTION RULES (prevents out-of-bounds / overlap):
+- Safe area: X ∈ [-6.5, 6.5], Y ∈ [-3.5, 3.5]. No object may exceed these bounds.
+- Use `VGroup(...).arrange(RIGHT, buff=0.5)` for side-by-side objects (no overlap).
+- Use `VGroup(...).arrange(DOWN, buff=0.4)` for stacked objects.
+- Use `.next_to(other, direction, buff=0.3)` instead of raw coordinate shifts.
+- Use `.to_edge(UP, buff=0.5)` for titles, `.to_edge(DOWN, buff=0.5)` for captions.
+- Scale down large objects: `obj.scale_to_fit_width(12)` or `.scale_to_fit_height(6)`.
+- Font sizes: body ≤ 36, titles ≤ 52. Reduce font_size for long strings.
+- FadeOut old objects before showing new ones in the same area.
 """
 
 CORRECTION_HUMAN = """ORIGINAL CODE:
@@ -152,7 +214,9 @@ ERROR_GUIDANCE = {
         "Each self.play() should animate ONE simple object. Keep it minimal."
     ),
     ManimErrorType.UNKNOWN: (
-        "Fix the error shown in the traceback. Ensure valid Manim CE ≥ 0.18 syntax."
+        "Fix the error shown in the traceback. Ensure valid Manim CE ≥ 0.18 syntax. "
+        "Also check for layout issues: objects outside safe area (X:[-6.5,6.5], Y:[-3.5,3.5]), "
+        "overlapping elements, or text that is too large for the screen."
     ),
 }
 
