@@ -12,6 +12,8 @@ services:
     volumes:
       # Source code — mounted so code changes take effect on container restart (no rebuild)
       - .:/app
+      # Named volume for Manim workspace — avoids Windows NTFS bind-mount permission issues
+      - manim_workspace:/app/output/manim_workspace
       # Docker socket — lets the app spawn Manim rendering containers on the host
       - /var/run/docker.sock:/var/run/docker.sock
       # Google Cloud TTS credentials (bind-mount so the key never enters the image)
@@ -22,19 +24,15 @@ services:
     env_file:
       - .env
     environment:
-      # Override path so it matches the bind-mount target inside the container
       - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
-      # Host-side project root — used by manim_runner to translate /app/... paths
-      # to host paths when spawning Manim containers via the Docker socket.
-      - HOST_PROJECT_DIR=${PWD}
+      # Volume name used by manim_runner when spawning Manim containers
+      - MANIM_WORKSPACE_VOLUME=autonomous-multi-agent-system-for-scientific-animation_manim_workspace
     restart: unless-stopped
     depends_on:
       manim:
         condition: service_completed_successfully
 
   # ── Manim rendering image (build-only, exits immediately after build) ─────
-  # Running `docker compose build` tags the image as manim-science-animation
-  # on the host Docker daemon — the app container spawns it via socket mount.
   manim:
     build:
       context: .
@@ -42,3 +40,6 @@ services:
     image: manim-science-animation
     command: ["echo", "manim image ready"]
     restart: "no"
+
+volumes:
+  manim_workspace:
