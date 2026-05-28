@@ -162,7 +162,7 @@
       });
       const data = await res.json();
       if (data.error) return showToast(data.error, "error");
-      window.location.href = "/result";
+      window.location.href = "/result.html";
     } catch (err) {
       showToast("Failed to start pipeline: " + err.message, "error");
     }
