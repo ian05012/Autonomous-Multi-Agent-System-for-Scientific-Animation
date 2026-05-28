@@ -14,7 +14,9 @@ from __future__ import annotations
 import ast
 import os
 import re
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from langchain_openai import ChatOpenAI
@@ -34,7 +36,8 @@ from rag.retriever import retrieve_manim_context, format_rag_context
 
 def _llm_model() -> str:
     return os.getenv("ANIMATOR_MODEL") or os.getenv("LLM_MODEL", "gpt-4o")
-MAX_RETRIES = 5
+MAX_RETRIES = 3
+PARALLEL_WORKERS = 3   # scenes rendered concurrently
 TIMING_TOLERANCE = 0.5  # seconds
 
 
@@ -370,44 +373,53 @@ def animator_node(state: PipelineState) -> dict[str, Any]:
     ]
     updated_storyboard = list(storyboard)
     error_messages: list[str] = []
+    _lock = threading.Lock()
 
     from tools.progress import update as _prog
     total_scenes = len(scenes_to_process)
+    completed_count = 0
 
-    for scene_idx, scene in enumerate(scenes_to_process):
+    def _process_scene(scene: SceneSpec) -> tuple[int, VideoMeta | None, str | None]:
+        """Process one scene; returns (scene_id, video_meta_or_None, error_or_None)."""
         scene_id = scene["scene_id"]
         audio_meta = audio_by_scene.get(scene_id)
-
         if audio_meta is None:
-            error_msg = f"Animator: No audio found for scene {scene_id}, skipping."
-            error_messages.append(error_msg)
-            _mark_scene_error(updated_storyboard, scene_id)
-            continue
-
+            return scene_id, None, f"Animator: No audio found for scene {scene_id}, skipping."
         target_duration = audio_meta["duration_seconds"]
-        pct = 35 + int((scene_idx / total_scenes) * 50)
-        _prog(pct, "Animator", f"Rendering scene {scene_id}/{total_scenes}")
         print(f"  [Animator] Processing scene {scene_id} (target: {target_duration}s)...")
-
         try:
-            video_meta, _ = _render_with_correction(scene, target_duration, llm)
-            video_clips.append(video_meta)
-            _mark_scene_done(updated_storyboard, scene_id)
+            # Each thread needs its own LLM instance (not thread-safe to share)
+            thread_llm = ChatOpenAI(model=_llm_model(), temperature=0.2)
+            video_meta, _ = _render_with_correction(scene, target_duration, thread_llm)
+            print(f"  [Animator] Scene {scene_id} — done ✓")
+            return scene_id, video_meta, None
         except Exception as exc:
-            # Catch ALL exceptions (including RateLimitError, not just RuntimeError)
-            error_msg = f"Animator: Scene {scene_id} permanently failed — {exc}"
-            error_messages.append(error_msg)
-            _mark_scene_error(updated_storyboard, scene_id)
-            print(f"  [Animator] ERROR: {error_msg}")
+            err = f"Animator: Scene {scene_id} permanently failed — {exc}"
+            print(f"  [Animator] ERROR: {err}")
+            return scene_id, None, err
 
-        # Save progress after every scene so partial results survive crashes
-        partial_updates: dict[str, Any] = {
-            "video_clips": sorted(video_clips, key=lambda v: v["scene_id"]),
-            "storyboard": updated_storyboard,
-        }
-        if error_messages:
-            partial_updates["error_log"] = error_messages
-        save_state({**state, **partial_updates})  # type: ignore[arg-type]
+    with ThreadPoolExecutor(max_workers=PARALLEL_WORKERS) as pool:
+        futures = {pool.submit(_process_scene, s): s for s in scenes_to_process}
+        for future in as_completed(futures):
+            scene_id, video_meta, error = future.result()
+            with _lock:
+                completed_count += 1
+                pct = 35 + int((completed_count / total_scenes) * 50)
+                _prog(pct, "Animator", f"Rendered {completed_count}/{total_scenes} scenes")
+                if video_meta is not None:
+                    video_clips.append(video_meta)
+                    _mark_scene_done(updated_storyboard, scene_id)
+                else:
+                    error_messages.append(error)
+                    _mark_scene_error(updated_storyboard, scene_id)
+                # Save progress after every scene
+                partial_updates: dict[str, Any] = {
+                    "video_clips": sorted(video_clips, key=lambda v: v["scene_id"]),
+                    "storyboard": updated_storyboard,
+                }
+                if error_messages:
+                    partial_updates["error_log"] = error_messages
+                save_state({**state, **partial_updates})  # type: ignore[arg-type]
 
     # Sort video clips by scene_id
     video_clips.sort(key=lambda v: v["scene_id"])
