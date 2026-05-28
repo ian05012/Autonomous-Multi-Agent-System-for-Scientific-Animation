@@ -24,6 +24,9 @@ services:
     environment:
       # Override path so it matches the bind-mount target inside the container
       - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+      # Host-side project root — used by manim_runner to translate /app/... paths
+      # to host paths when spawning Manim containers via the Docker socket.
+      - HOST_PROJECT_DIR=${PWD}
     restart: unless-stopped
     depends_on:
       manim:

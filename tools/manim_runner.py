@@ -36,6 +36,18 @@ RENDER_TIMEOUT = 180                       # seconds
 VIDEO_OUTPUT_DIR = "output/video"
 RENDER_RESOLUTION = os.getenv("RENDER_RESOLUTION", "720p")
 
+# When running inside Docker, the app container mounts HOST_PROJECT_DIR at /app.
+# Manim containers are spawned by the HOST Docker daemon, so volume paths must
+# be HOST-side paths, not container-internal paths.
+_HOST_PROJECT_DIR = os.getenv("HOST_PROJECT_DIR", "")
+
+
+def _host_path(container_abs_path: str) -> str:
+    """Convert an /app/... path to its host-side equivalent for Docker volume mounts."""
+    if _HOST_PROJECT_DIR and container_abs_path.startswith("/app/"):
+        return os.path.join(_HOST_PROJECT_DIR, container_abs_path[5:])
+    return container_abs_path
+
 RESOLUTION_FLAGS = {
     "720p":  ["-r", "1280,720"],
     "1080p": ["-r", "1920,1080"],
@@ -127,10 +139,18 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
     output_filename = f"scene_{scene_id}.mp4"
     final_output_path = str(Path(VIDEO_OUTPUT_DIR) / output_filename)
 
-    with tempfile.TemporaryDirectory() as tmpdir:
+    # Use a persistent workspace under output/ so the path is accessible to both
+    # the app container (/app/output/manim_tmp/) and the host Docker daemon via
+    # HOST_PROJECT_DIR env var (avoids Docker-in-Docker /tmp volume mount failure).
+    workspace_dir = Path("output/manim_tmp") / f"scene_{scene_id}"
+    workspace_dir.mkdir(parents=True, exist_ok=True)
+    try:
         # Write Manim script to workspace
-        script_path = Path(tmpdir) / "scene.py"
-        script_path.write_text(code, encoding="utf-8")
+        (workspace_dir / "scene.py").write_text(code, encoding="utf-8")
+
+        # Resolve the volume path the HOST Docker daemon can see
+        workspace_abs = str(workspace_dir.resolve())
+        volume_host_path = _host_path(workspace_abs)
 
         # Build Docker command
         cmd = [
@@ -146,11 +166,13 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
         client = _get_docker_client()
         image = _get_manim_image()
 
+        print(f"  [Manim] workspace host path: {volume_host_path}")
+
         try:
             container = client.containers.run(
                 image=image,
                 command=cmd,
-                volumes={tmpdir: {"bind": "/workspace", "mode": "rw"}},
+                volumes={volume_host_path: {"bind": "/workspace", "mode": "rw"}},
                 working_dir="/workspace",
                 remove=False,   # keep container so we can kill it on timeout
                 detach=True,
@@ -184,6 +206,7 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
 
         if exit_code != 0:
             error_type = classify_error(stderr_text)
+            print(f"  [Manim] render stderr:\n{stderr_text[-2000:]}")
             raise ManimRenderError(
                 f"Manim render failed (scene {scene_id}): {error_type.value}",
                 error_type,
@@ -191,7 +214,7 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
             )
 
         # Find the rendered MP4 in workspace
-        mp4_files = list(Path(tmpdir).rglob("*.mp4"))
+        mp4_files = list(workspace_dir.rglob("*.mp4"))
         if not mp4_files:
             raise ManimRenderError(
                 f"Rendering succeeded but no MP4 found for scene {scene_id}",
@@ -201,6 +224,9 @@ def render_scene(code: str, scene_id: int, class_name: str = "AnimatedScene") ->
 
         # Copy to output directory
         shutil.copy2(str(mp4_files[0]), final_output_path)
+    finally:
+        # Clean up workspace after copy
+        shutil.rmtree(workspace_dir, ignore_errors=True)
 
     # Measure actual video duration
     duration = _measure_video_duration(final_output_path)
