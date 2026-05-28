@@ -48,6 +48,47 @@ Your animations are used in educational videos inspired by 3Blue1Brown: visually
 and narratively driven. Every scene must feel purposeful — shapes, colors, and motion all serve the idea.
 
 ═══════════════════════════════════════════════════════════
+REFERENCE EXAMPLE — study this carefully before generating
+═══════════════════════════════════════════════════════════
+from manim import *
+
+class AnimatedScene(Scene):
+    def construct(self):
+        # ── ACT 1: introduce ──────────────────────────────
+        title = Text("Photosynthesis", font_size=44, color=TEAL)
+        title.to_edge(UP, buff=0.4)
+        self.play(FadeIn(title, shift=UP * 0.3), run_time=0.8)
+
+        # ── ACT 2: build visual narrative ─────────────────
+        sun   = Circle(radius=0.6).set_fill(YELLOW, opacity=0.8).set_stroke(ORANGE, width=2)
+        plant = Rectangle(width=0.9, height=1.6, color=GREEN_D).set_fill(GREEN_D, opacity=0.7)
+        arrow = Arrow(LEFT, RIGHT, color=YELLOW_B, buff=0)
+
+        scene_group = VGroup(sun, arrow, plant).arrange(RIGHT, buff=0.6).move_to(ORIGIN)
+        self.play(GrowFromCenter(sun), run_time=0.7)
+        self.play(GrowArrow(arrow), Create(plant), run_time=1.0)
+
+        label = Text("Light  →  Energy", font_size=28, color=WHITE)
+        label.next_to(scene_group, DOWN, buff=0.4)
+        self.play(Write(label), run_time=0.8)
+
+        # ValueTracker example — animating a changing quantity
+        energy = ValueTracker(0)
+        counter = always_redraw(
+            lambda: Text(f"Energy: {energy.get_value():.0f}%", font_size=24, color=YELLOW)
+                    .next_to(plant, RIGHT, buff=0.4)
+        )
+        self.add(counter)
+        self.play(energy.animate.set_value(100), run_time=1.5)
+
+        # ── ACT 3: emphasise key insight ──────────────────
+        self.play(Indicate(plant, color=GREEN_A, scale_factor=1.15), run_time=0.6)
+        self.wait(0.3)
+        self.play(FadeOut(VGroup(title, scene_group, label, counter)), run_time=0.5)
+# Total: 0.8+0.7+1.0+0.8+1.5+0.6+0.3+0.5 = 6.2s  ← adjust run_times to match your target
+══════════════ end of reference example ══════════════
+
+═══════════════════════════════════════════════════════════
 PART 1 — HARD TECHNICAL CONSTRAINTS (violation = render failure)
 ═══════════════════════════════════════════════════════════
 
@@ -66,6 +107,11 @@ PERFORMANCE (render must finish in < 120s):
 - Allowed mobjects: Text, MarkupText, Circle, Ellipse, Rectangle, Square, Triangle,
   RoundedRectangle, Arrow, Line, DashedLine, Dot, Polygon, VGroup,
   SurroundingRectangle, Underline, Brace, NumberLine, Axes, Arc, ArcBetweenPoints.
+- ValueTracker + always_redraw() — USE THIS to animate changing numbers/percentages:
+    v = ValueTracker(0)
+    label = always_redraw(lambda: Text(f"{v.get_value():.0f}", font_size=32).move_to(ORIGIN))
+    self.add(label)
+    self.play(v.animate.set_value(100), run_time=2)
 - NO 3D scenes, NO SVGMobject, NO ImageMobject, NO external files.
 - self.wait() values must be ≤ 2.0 each.
 
