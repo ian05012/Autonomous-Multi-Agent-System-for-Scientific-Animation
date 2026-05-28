@@ -21,9 +21,16 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from state import AudioMeta, SceneSpec
 
-SUBTITLE_ENABLED = os.getenv("SUBTITLE_ENABLED", "true").lower() == "true"
-SUBTITLE_LANGUAGE = os.getenv("SUBTITLE_LANGUAGE", "en")
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
+def _subtitle_enabled() -> bool:
+    return os.getenv("SUBTITLE_ENABLED", "true").lower() == "true"
+
+def _subtitle_language() -> str:
+    return os.getenv("SUBTITLE_LANGUAGE", "en")
+
+SUBTITLE_ENABLED = _subtitle_enabled()
+SUBTITLE_LANGUAGE = _subtitle_language()
+def _llm_model() -> str:
+    return os.getenv("LLM_MODEL", "gpt-4o")
 
 LANGUAGE_NAMES = {
     "en": "English",
@@ -54,7 +61,7 @@ def _translate_texts(texts: list[str], target_language: str) -> list[str]:
     from langchain_core.messages import SystemMessage, HumanMessage
 
     lang_name = LANGUAGE_NAMES.get(target_language, target_language)
-    llm = ChatOpenAI(model=LLM_MODEL, temperature=0)
+    llm = ChatOpenAI(model=_llm_model(), temperature=0)
 
     numbered = "\n".join(f"{i+1}. {t}" for i, t in enumerate(texts))
     system = SystemMessage(content=(

@@ -49,7 +49,8 @@ from tools.ffmpeg_composer import compose_video
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
+def _llm_model() -> str:
+    return os.getenv("LLM_MODEL", "gpt-4o")
 
 
 # ─── Node wrappers with error handling ────────────────────────────────────────
@@ -162,7 +163,7 @@ def revision_router_node(state: PipelineState) -> dict[str, Any]:
         for s in storyboard
     )
 
-    llm = ChatOpenAI(model=LLM_MODEL, temperature=0)
+    llm = ChatOpenAI(model=_llm_model(), temperature=0)
     response = llm.invoke([
         SystemMessage(content=REVISION_ROUTER_SYSTEM),
         HumanMessage(

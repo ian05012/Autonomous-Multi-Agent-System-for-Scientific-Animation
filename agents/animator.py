@@ -32,7 +32,8 @@ from rag.retriever import retrieve_manim_context, format_rag_context
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-LLM_MODEL = os.getenv("ANIMATOR_MODEL") or os.getenv("LLM_MODEL", "gpt-4o")
+def _llm_model() -> str:
+    return os.getenv("ANIMATOR_MODEL") or os.getenv("LLM_MODEL", "gpt-4o")
 MAX_RETRIES = 5
 TIMING_TOLERANCE = 0.5  # seconds
 
@@ -354,7 +355,7 @@ def animator_node(state: PipelineState) -> dict[str, Any]:
     # Build audio duration lookup by scene_id
     audio_by_scene = {a["scene_id"]: a for a in audio_files}
 
-    llm = ChatOpenAI(model=LLM_MODEL, temperature=0.2)
+    llm = ChatOpenAI(model=_llm_model(), temperature=0.2)
 
     # HITL partial revision support
     revision_target = state.get("revision_target")

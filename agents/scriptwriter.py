@@ -24,7 +24,8 @@ from state import PipelineState, SceneSpec, save_state
 
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
+def _llm_model() -> str:
+    return os.getenv("LLM_MODEL", "gpt-4o")
 MAX_SCENES = 10
 MIN_SCENES = 3
 
@@ -108,7 +109,7 @@ def scriptwriter_node(state: PipelineState) -> dict[str, Any]:
     # 2. Call LLM to generate storyboard
     from tools.progress import update as _prog
     _prog(5, "Scriptwriter", "Generating storyboard from article...")
-    llm = ChatOpenAI(model=LLM_MODEL, temperature=0.3)
+    llm = ChatOpenAI(model=_llm_model(), temperature=0.3)
 
     system_msg = SystemMessage(
         content=SYSTEM_PROMPT.format(min_scenes=MIN_SCENES, max_scenes=MAX_SCENES)

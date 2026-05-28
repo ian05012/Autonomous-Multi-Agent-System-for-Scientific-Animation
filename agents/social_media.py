@@ -19,7 +19,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from state import PipelineState, save_state
 
 
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
+def _llm_model() -> str:
+    return os.getenv("LLM_MODEL", "gpt-4o")
 
 
 # ─── Content generation ───────────────────────────────────────────────────────
@@ -95,7 +96,7 @@ def social_media_node(state: PipelineState) -> dict[str, Any]:
         error_msg = "SocialMedia: No final video path in state. Run composition first."
         return {"error_log": [error_msg]}
 
-    llm = ChatOpenAI(model=LLM_MODEL, temperature=0.5)
+    llm = ChatOpenAI(model=_llm_model(), temperature=0.5)
 
     # Generate content
     youtube_url = None
