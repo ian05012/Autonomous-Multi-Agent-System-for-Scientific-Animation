@@ -22,3 +22,6 @@ google-auth-oauthlib>=1.0
 google-cloud-texttospeech>=2.14
 rich>=13.0
 flask>=3.0
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.12

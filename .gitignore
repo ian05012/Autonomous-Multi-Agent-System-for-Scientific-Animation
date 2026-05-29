@@ -17,14 +17,20 @@ venv/
 .venv/
 env/
 
+# Frontend dependencies
+node_modules/
+
 # Output / generated files
 output/
 rag/chroma_db/
+backend/uploads/*
+!backend/uploads/.gitkeep
 
 # Agent / workflow tooling
 .agent/
 .claude/
 openspec/
+final_runs/
 
 # IDE
 .vscode/
