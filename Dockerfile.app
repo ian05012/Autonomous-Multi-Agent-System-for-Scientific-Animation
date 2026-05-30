@@ -20,5 +20,5 @@ RUN pip install --no-cache-dir -r requirements.web.txt
 
 COPY . .
 
-EXPOSE 5000
-CMD ["python", "server.py"]
+EXPOSE 8000
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

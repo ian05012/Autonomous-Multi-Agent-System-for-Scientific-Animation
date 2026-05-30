@@ -3,7 +3,7 @@
 # Common commands for development, setup, and running the system.
 # Requires: Python 3.11+, Docker, FFMPEG installed on host.
 
-.PHONY: setup setup-web setup-full install install-frontend build-rag validate-examples run run-web run-backend run-frontend test clean help
+.PHONY: setup setup-web setup-full install install-web install-frontend build-rag validate-examples run run-web run-api run-backend run-frontend test clean help
 
 ## ─── Setup ──────────────────────────────────────────────────────────────────
 
@@ -30,6 +30,8 @@ setup-full: setup-web build-manim-image
 install:
 	@echo "Installing Python dependencies..."
 	pip install -r requirements.txt
+
+install-web: install-frontend
 
 install-frontend:
 	@echo "Installing frontend dependencies..."
@@ -66,9 +68,11 @@ run:
 	@echo "Starting Streamlit HITL interface..."
 	streamlit run app.py --server.port=8501
 
-run-backend:
+run-api:
 	@echo "Starting FastAPI backend at http://127.0.0.1:8000 ..."
 	python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+
+run-backend: run-api
 
 run-frontend:
 	@echo "Starting React frontend at http://127.0.0.1:5173 ..."
@@ -138,6 +142,7 @@ help:
 	@echo "  make setup-web          Install backend/frontend deps and create .env"
 	@echo "  make setup-full         Web setup + build Manim Docker image"
 	@echo "  make install            Install Python dependencies"
+	@echo "  make install-web        Install React frontend dependencies"
 	@echo "  make install-frontend   Install frontend dependencies"
 	@echo "  make build-manim-image  Build Manim Docker rendering image"
 	@echo ""
@@ -148,6 +153,7 @@ help:
 	@echo ""
 	@echo "  make run                Start Streamlit HITL interface (port 8501)"
 	@echo "  make run-web            Start FastAPI + React frontend"
+	@echo "  make run-api            Start FastAPI backend only (port 8000)"
 	@echo "  make run-backend        Start FastAPI backend only (port 8000)"
 	@echo "  make run-frontend       Start React frontend only (port 5173)"
 	@echo "  make run-headless TEXT='...'  Run pipeline headlessly"

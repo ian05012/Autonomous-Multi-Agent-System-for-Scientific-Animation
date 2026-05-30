@@ -1,12 +1,12 @@
 services:
 
-  # ── Flask web app ─────────────────────────────────────────────────────────
-  app:
+  # ── FastAPI backend ───────────────────────────────────────────────────────
+  backend:
     build:
       context: .
       dockerfile: Dockerfile.app
     ports:
-      - "5001:5000"
+      - "8000:8000"
     volumes:
       # Source code — mounted so code changes take effect on container restart (no rebuild)
       - .:/app
@@ -24,6 +24,21 @@ services:
       manim:
         condition: service_completed_successfully
 
+  # ── React frontend ────────────────────────────────────────────────────────
+  frontend:
+    image: node:20-slim
+    working_dir: /app/frontend
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - frontend_node_modules:/app/frontend/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+
   # ── Manim rendering image (build-only, exits immediately after build) ─────
   manim:
     build:
@@ -35,3 +50,4 @@ services:
 
 volumes:
   manim_workspace:
+  frontend_node_modules:

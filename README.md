@@ -33,7 +33,7 @@ Scriptwriter  Voiceover  Animator Agent
            Draft Video
                    │
                    ▼
-      HITL Review (Streamlit UI)
+      HITL Review (React + FastAPI UI)
                    │
           ┌────────┴────────┐
           │                 │
@@ -44,6 +44,13 @@ Scriptwriter  Voiceover  Animator Agent
 ```
 
 ## Quick Start
+
+The current web architecture is **React + FastAPI**:
+
+- FastAPI backend: `backend/main.py` on port `8000`
+- React/Vite frontend: `frontend/` on port `5173`
+- Legacy interfaces are still kept for reference: `app.py` (Streamlit) and
+  `server.py` (Flask/static frontend)
 
 ### 1. Prerequisites
 
@@ -62,6 +69,12 @@ cd science-animation-system
 
 # Install backend + frontend dependencies and create .env if missing
 make setup-web
+```
+
+For frontend-only dependency installation:
+
+```bash
+make install-web
 ```
 
 If you want to run the complete animation pipeline with Manim rendering, build
@@ -118,16 +131,33 @@ make run-web
 You can also run each side separately:
 
 ```bash
-make run-backend   # http://127.0.0.1:8000
+make run-api       # http://127.0.0.1:8000
 make run-frontend  # http://127.0.0.1:5173
 ```
 
-The legacy Streamlit interface is still available:
+`make run-backend` remains as an alias for `make run-api`.
+
+Docker Compose also starts the same React + FastAPI stack:
+
+```bash
+docker compose up --build
+# Frontend: http://localhost:5173
+# Backend:  http://localhost:8000
+```
+
+### Legacy Interfaces
+
+The legacy Streamlit interface is still available, but it is not the default
+web architecture:
 
 ```bash
 make run
 # → Open http://localhost:8501
 ```
+
+`app.py` is the Streamlit HITL interface. `server.py` is the previous Flask
+backend/static frontend server. Both are intentionally retained for legacy use
+and should not be deleted during the React + FastAPI migration.
 
 Or run headlessly (CLI):
 ```bash
@@ -167,10 +197,17 @@ make test-unit      # Unit tests only (no API keys / Docker needed)
 │   ├── retriever.py        # Retrieval interface
 │   ├── validate_examples.py # Example validation (renders via Docker)
 │   └── examples/           # Curated Manim examples (validated)
+├── backend/
+│   ├── main.py             # FastAPI backend for the React app
+│   ├── schemas.py          # API request/response models
+│   └── services/           # Pipeline, video, publish, and state services
+├── frontend/               # React + Vite application
 ├── tests/                  # Unit and integration tests
 ├── state.py                # Shared PipelineState TypedDict
-├── app.py                  # Streamlit HITL interface
+├── app.py                  # Legacy Streamlit HITL interface
+├── server.py               # Legacy Flask/static frontend server
 ├── main.py                 # CLI entry point
+├── Dockerfile.app          # FastAPI backend container
 ├── Dockerfile.manim        # Manim rendering container
 └── Makefile                # Common commands
 ```
