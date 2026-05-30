@@ -9,6 +9,7 @@ type Props = {
   sourceType: SourceType;
   inputValue: string;
   uploadedName: string;
+  uploadStatus: string;
   ttsLanguage: string;
   subtitleEnabled: boolean;
   subtitleLanguage: string;
@@ -43,6 +44,7 @@ export function Sidebar(props: Props) {
           sourceType={props.sourceType}
           inputValue={props.inputValue}
           uploadedName={props.uploadedName}
+          uploadStatus={props.uploadStatus}
           onSourceType={props.onSourceType}
           onInputValue={props.onInputValue}
           onUpload={props.onUpload}

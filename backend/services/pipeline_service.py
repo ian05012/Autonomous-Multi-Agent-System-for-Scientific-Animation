@@ -66,6 +66,10 @@ def ensure_not_running() -> None:
 def apply_model_tier(tier: str) -> None:
     cfg = MODEL_TIERS[tier]
     api_key = os.getenv(cfg["api_key_env"], "")
+    if not api_key or api_key.startswith("your_"):
+        raise RuntimeError(
+            f"Missing API key for selected model tier. Set {cfg['api_key_env']} in .env."
+        )
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key
     if cfg["base_url"]:

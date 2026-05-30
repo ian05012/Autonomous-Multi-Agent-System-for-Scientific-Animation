@@ -5,6 +5,7 @@ type Props = {
   sourceType: SourceType;
   inputValue: string;
   uploadedName: string;
+  uploadStatus: string;
   onSourceType: (value: SourceType) => void;
   onInputValue: (value: string) => void;
   onUpload: (file: File) => void;
@@ -15,6 +16,7 @@ export function InputPanel({
   sourceType,
   inputValue,
   uploadedName,
+  uploadStatus,
   onSourceType,
   onInputValue,
   onUpload,
@@ -71,6 +73,10 @@ export function InputPanel({
             className="w-full text-sm"
           />
           {uploadedName && <span className="mt-3 block text-studio-violet">{uploadedName}</span>}
+          {uploadStatus && <span className="mt-2 block text-xs text-studio-muted">{uploadStatus}</span>}
+          {!uploadedName && !uploadStatus && (
+            <span className="mt-2 block text-xs text-studio-muted">Generate unlocks after the PDF is uploaded to the backend.</span>
+          )}
         </label>
       )}
 

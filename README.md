@@ -48,7 +48,8 @@ Scriptwriter  Voiceover  Animator Agent
 ### 1. Prerequisites
 
 - Python 3.11+
-- Docker Desktop (for Manim rendering)
+- Node.js 20+ and npm
+- Docker Desktop (only required for Manim rendering / full video generation)
 - FFMPEG installed on host
 - API keys: OpenAI (required), ElevenLabs (optional)
 
@@ -59,17 +60,20 @@ Scriptwriter  Voiceover  Animator Agent
 git clone <repo-url>
 cd science-animation-system
 
-# Install dependencies
-make install
+# Install backend + frontend dependencies and create .env if missing
+make setup-web
+```
 
-# Build the Manim Docker rendering image
-make build-manim-image
+If you want to run the complete animation pipeline with Manim rendering, build
+the Docker image too:
+
+```bash
+make setup-full
 ```
 
 ### 3. Configure API Keys
 
 ```bash
-cp .env.example .env
 # Edit .env and fill in your API keys
 ```
 
@@ -106,7 +110,21 @@ make build-rag-full
 ### 5. Run
 
 ```bash
-# Start the Streamlit HITL interface
+# Start the FastAPI backend + React frontend
+make run-web
+# → Open http://127.0.0.1:5173
+```
+
+You can also run each side separately:
+
+```bash
+make run-backend   # http://127.0.0.1:8000
+make run-frontend  # http://127.0.0.1:5173
+```
+
+The legacy Streamlit interface is still available:
+
+```bash
 make run
 # → Open http://localhost:8501
 ```

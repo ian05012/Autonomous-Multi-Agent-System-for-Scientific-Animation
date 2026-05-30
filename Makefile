@@ -3,7 +3,7 @@
 # Common commands for development, setup, and running the system.
 # Requires: Python 3.11+, Docker, FFMPEG installed on host.
 
-.PHONY: setup install build-rag validate-examples run test clean help
+.PHONY: setup setup-web setup-full install install-frontend build-rag validate-examples run run-web run-backend run-frontend test clean help
 
 ## ─── Setup ──────────────────────────────────────────────────────────────────
 
@@ -16,9 +16,24 @@ setup: install build-manim-image
 	@echo "    3. Run: make build-rag"
 	@echo "    4. Run: make run"
 
+setup-web: install install-frontend
+	@if [ ! -f .env ]; then cp .env.example .env; echo "✓ Created .env from .env.example"; fi
+	@echo ""
+	@echo "✓ Web setup complete!"
+	@echo "  Edit .env with your API keys, then run: make run-web"
+
+setup-full: setup-web build-manim-image
+	@echo ""
+	@echo "✓ Full setup complete!"
+	@echo "  Docker image is ready for Manim rendering."
+
 install:
 	@echo "Installing Python dependencies..."
 	pip install -r requirements.txt
+
+install-frontend:
+	@echo "Installing frontend dependencies..."
+	npm --prefix frontend install
 
 build-manim-image:
 	@echo "Building Manim Docker image..."
@@ -50,6 +65,23 @@ rebuild-rag:
 run:
 	@echo "Starting Streamlit HITL interface..."
 	streamlit run app.py --server.port=8501
+
+run-backend:
+	@echo "Starting FastAPI backend at http://127.0.0.1:8000 ..."
+	python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+
+run-frontend:
+	@echo "Starting React frontend at http://127.0.0.1:5173 ..."
+	npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173
+
+run-web:
+	@echo "Starting FastAPI backend + React frontend..."
+	@echo "Frontend: http://127.0.0.1:5173"
+	@echo "Backend:  http://127.0.0.1:8000"
+	@trap 'kill 0' INT TERM EXIT; \
+	python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000 & \
+	npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173 & \
+	wait
 
 run-headless:
 	@echo "Usage: make run-headless TEXT='your article text here'"
@@ -103,7 +135,10 @@ help:
 	@echo "Science Animation System — Available Commands"
 	@echo "─────────────────────────────────────────────"
 	@echo "  make setup              Full setup (install + build Docker image)"
+	@echo "  make setup-web          Install backend/frontend deps and create .env"
+	@echo "  make setup-full         Web setup + build Manim Docker image"
 	@echo "  make install            Install Python dependencies"
+	@echo "  make install-frontend   Install frontend dependencies"
 	@echo "  make build-manim-image  Build Manim Docker rendering image"
 	@echo ""
 	@echo "  make validate-examples  Validate LLM-generated Manim examples"
@@ -112,6 +147,9 @@ help:
 	@echo "  make rebuild-rag        Force rebuild RAG from scratch"
 	@echo ""
 	@echo "  make run                Start Streamlit HITL interface (port 8501)"
+	@echo "  make run-web            Start FastAPI + React frontend"
+	@echo "  make run-backend        Start FastAPI backend only (port 8000)"
+	@echo "  make run-frontend       Start React frontend only (port 5173)"
 	@echo "  make run-headless TEXT='...'  Run pipeline headlessly"
 	@echo ""
 	@echo "  make test               Run full test suite"

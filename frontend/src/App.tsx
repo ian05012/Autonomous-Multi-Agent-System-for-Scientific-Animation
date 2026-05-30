@@ -26,6 +26,7 @@ function App() {
   const [sourceType, setSourceType] = useState<SourceType>("text");
   const [inputValue, setInputValue] = useState("");
   const [uploadedName, setUploadedName] = useState("");
+  const [uploadStatus, setUploadStatus] = useState("");
   const [ttsLanguage, setTtsLanguage] = useState("en-US");
   const [subtitleEnabled, setSubtitleEnabled] = useState(true);
   const [subtitleLanguage, setSubtitleLanguage] = useState("zh-TW");
@@ -91,13 +92,22 @@ function App() {
 
   function handleUpload(file: File) {
     setClientError("");
+    setInputValue("");
+    setUploadedName(file.name);
+    setUploadStatus("Uploading PDF...");
     api
       .uploadPdf(file)
       .then((result) => {
         setInputValue(result.path);
         setUploadedName(result.filename);
+        setUploadStatus("PDF uploaded. Ready to generate.");
       })
-      .catch((error) => setClientError(error.message));
+      .catch((error) => {
+        setInputValue("");
+        setUploadedName("");
+        setUploadStatus("");
+        setClientError(error.message);
+      });
   }
 
   const errorScenes = state?.storyboard?.filter((scene) => scene.status === "error") ?? [];
@@ -146,6 +156,7 @@ function App() {
             sourceType={sourceType}
             inputValue={inputValue}
             uploadedName={uploadedName}
+            uploadStatus={uploadStatus}
             ttsLanguage={ttsLanguage}
             subtitleEnabled={subtitleEnabled}
             subtitleLanguage={subtitleLanguage}
@@ -156,6 +167,7 @@ function App() {
               setSourceType(value);
               setInputValue("");
               setUploadedName("");
+              setUploadStatus("");
             }}
             onInputValue={setInputValue}
             onUpload={handleUpload}
